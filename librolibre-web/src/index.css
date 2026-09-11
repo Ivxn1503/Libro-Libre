@@ -1,0 +1,556 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Poppins:wght@400;500;600;700;800&display=swap");
+
+:root {
+  color: #243126;
+  background: #fff8e7;
+  font-family: "Lato", Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #fff8e7;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pagina {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.encabezado {
+  align-items: center;
+  background: #fffdf7;
+  border-bottom: 1px solid #eee7d6;
+  display: flex;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 0 8%;
+}
+
+.marca {
+  color: #2e7d32;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.marca::before {
+  content: "📚";
+  font-size: 1.25rem;
+  margin-right: 0.45rem;
+}
+
+.navegacion {
+  display: flex;
+  gap: 1.6rem;
+}
+
+.navegacion a {
+  color: #4c5c4d;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.navegacion a:hover {
+  color: #2e7d32;
+}
+
+.acciones-encabezado {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.boton {
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  justify-content: center;
+  padding: 0.7rem 1rem;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.boton:hover {
+  transform: translateY(-2px);
+}
+
+.boton.primario {
+  background: #2e7d32;
+  color: #ffffff;
+}
+
+.boton.primario:hover {
+  background: #256829;
+}
+
+.boton.secundario {
+  background: #fffdf7;
+  border: 1px solid #2e7d32;
+  color: #2e7d32;
+}
+
+.boton.texto {
+  background: transparent;
+  color: #356438;
+}
+
+.boton.grande {
+  min-height: 52px;
+  padding: 0.85rem 1.2rem;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 78% 30%, #f7e7a9 0, transparent 20%),
+    linear-gradient(115deg, #e4f3dc 0%, #eff8e6 51%, #fff5d9 100%);
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  min-height: 430px;
+  padding: 5rem 10% 4.5rem;
+}
+
+.hero-contenido {
+  max-width: 650px;
+}
+
+.etiqueta {
+  color: #4f8b51;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  margin: 0 0 0.8rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  color: #29472d;
+  font-family: "Poppins", sans-serif;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw, 4.4rem);
+  letter-spacing: -2.5px;
+  line-height: 1.12;
+  margin-bottom: 1.25rem;
+}
+
+.hero-descripcion {
+  color: #516553;
+  font-size: 1.1rem;
+  line-height: 1.75;
+  max-width: 610px;
+}
+
+.hero-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.hero-ilustracion {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 280px;
+  position: relative;
+}
+
+.pila-libros {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  transform: rotate(-7deg);
+  width: 250px;
+}
+
+.libro {
+  border: 3px solid rgba(68, 72, 38, 0.14);
+  border-radius: 6px;
+  box-shadow: 0 12px 18px rgba(60, 74, 39, 0.14);
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-weight: 800;
+  margin-top: -4px;
+  padding: 0.85rem 1rem;
+  text-align: center;
+  transform: rotate(1deg);
+  width: 100%;
+}
+
+.libro-verde {
+  background: #477a44;
+}
+
+.libro-amarillo {
+  background: #e8b93b;
+  color: #554711;
+  transform: rotate(-2deg);
+  width: 92%;
+}
+
+.libro-naranja {
+  background: #c26a35;
+  transform: rotate(2deg);
+  width: 97%;
+}
+
+.libro-crema {
+  background: #f5e4b2;
+  color: #5b593d;
+  transform: rotate(-1deg);
+  width: 89%;
+}
+
+.flor {
+  color: #e6a96b;
+  font-size: 2rem;
+  position: absolute;
+}
+
+.flor-uno {
+  left: 10%;
+  top: 18%;
+}
+
+.flor-dos {
+  bottom: 16%;
+  right: 14%;
+}
+
+.flor-tres {
+  right: 7%;
+  top: 12%;
+}
+
+.buscador-seccion {
+  margin: -38px auto 0;
+  max-width: 1010px;
+  padding: 0 1.25rem;
+  position: relative;
+}
+
+.buscador {
+  background: #ffffff;
+  border: 1px solid #ece7d8;
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(62, 76, 44, 0.13);
+  padding: 1.25rem;
+}
+
+.buscador label {
+  color: #365239;
+  display: block;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.buscador-campo {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.buscador input {
+  background: #fafcf8;
+  border: 1px solid #dce7d6;
+  border-radius: 9px;
+  color: #2c3d2e;
+  flex: 1;
+  min-width: 0;
+  outline-color: #2e7d32;
+  padding: 0.82rem 0.9rem;
+}
+
+.seccion-libros {
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 5rem 1.5rem;
+}
+
+.seccion-encabezado {
+  align-items: end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.seccion-encabezado h2 {
+  font-size: clamp(1.9rem, 4vw, 2.65rem);
+  letter-spacing: -1.2px;
+  margin-bottom: 0.25rem;
+}
+
+.seccion-encabezado p:not(.etiqueta) {
+  color: #607262;
+  margin-bottom: 0;
+}
+
+.enlace-ver-todos,
+.enlace-detalle {
+  color: #2e7d32;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.rejilla-libros {
+  display: grid;
+  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+
+.tarjeta-libro {
+  background: #ffffff;
+  border: 1px solid #eee7d8;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(65, 81, 49, 0.08);
+  overflow: hidden;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.tarjeta-libro:hover {
+  box-shadow: 0 15px 35px rgba(65, 81, 49, 0.15);
+  transform: translateY(-5px);
+}
+
+.imagen-libro {
+  background: #e9f0df;
+  height: 205px;
+  overflow: hidden;
+  position: relative;
+}
+
+.imagen-libro img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.portada-sin-imagen {
+  align-items: center;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent),
+    #507b45;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  font-family: "Poppins", sans-serif;
+  height: 100%;
+  justify-content: center;
+  padding: 1.2rem;
+  text-align: center;
+}
+
+.portada-sin-imagen span {
+  font-size: 2.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.portada-sin-imagen strong {
+  font-size: 1.15rem;
+}
+
+.insignia {
+  border-radius: 999px;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  left: 0.8rem;
+  padding: 0.42rem 0.65rem;
+  position: absolute;
+  top: 0.8rem;
+}
+
+.insignia.regalo {
+  background: #2e7d32;
+}
+
+.insignia.intercambio {
+  background: #b56a25;
+}
+
+.tarjeta-contenido {
+  padding: 1.15rem;
+}
+
+.categoria {
+  color: #5a935c;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.tarjeta-contenido h3 {
+  font-size: 1.12rem;
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.autor {
+  color: #6d756d;
+  font-size: 0.92rem;
+  margin-bottom: 0.85rem;
+}
+
+.ubicacion {
+  color: #546257;
+  font-size: 0.84rem;
+  margin-bottom: 1rem;
+}
+
+.tarjeta-pie {
+  align-items: center;
+  border-top: 1px solid #edf0ea;
+  color: #7d867e;
+  display: flex;
+  font-size: 0.78rem;
+  justify-content: space-between;
+  padding-top: 0.85rem;
+}
+
+.mensaje-estado {
+  background: #ffffff;
+  border: 1px solid #e5eddf;
+  border-radius: 12px;
+  color: #557158;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.mensaje-estado.error {
+  border-color: #f0c5c2;
+  color: #a8413b;
+}
+
+.estado-vacio {
+  background: #ffffff;
+  border: 1px dashed #c9d8bf;
+  border-radius: 16px;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.estado-vacio span {
+  font-size: 2.5rem;
+}
+
+.estado-vacio h3 {
+  font-size: 1.35rem;
+  margin: 0.7rem 0 0.4rem;
+}
+
+.estado-vacio p {
+  color: #657467;
+  margin-bottom: 1.2rem;
+}
+
+@media (max-width: 850px) {
+  .encabezado {
+    padding: 0 5%;
+  }
+
+  .navegacion {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 4rem 8% 5rem;
+  }
+
+  .hero-ilustracion {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 560px) {
+  .encabezado {
+    min-height: 66px;
+  }
+
+  .marca {
+    font-size: 1.2rem;
+  }
+
+  .acciones-encabezado .texto {
+    display: none;
+  }
+
+  .acciones-encabezado .primario {
+    font-size: 0.74rem;
+    padding: 0.6rem 0.7rem;
+  }
+
+  .hero {
+    padding: 3.5rem 6% 4.6rem;
+  }
+
+  h1 {
+    letter-spacing: -1.7px;
+  }
+
+  .buscador-campo {
+    flex-direction: column;
+  }
+
+  .buscador-campo .boton {
+    width: 100%;
+  }
+
+  .seccion-libros {
+    padding: 4rem 1rem;
+  }
+
+  .seccion-encabezado {
+    align-items: start;
+    flex-direction: column;
+  }
+}

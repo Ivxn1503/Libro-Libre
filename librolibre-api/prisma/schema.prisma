@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RolUsuario {
+  USUARIO
+  ADMINISTRADOR
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  INACTIVO
+  BLOQUEADO
+}
+
+enum ModalidadLibro {
+  REGALO
+  INTERCAMBIO
+}
+
+enum EstadoLibro {
+  DISPONIBLE
+  RESERVADO
+  ENTREGADO
+  OCULTO
+  ELIMINADO
+}
+
+enum CondicionLibro {
+  COMO_NUEVO
+  MUY_BUEN_ESTADO
+  BUEN_ESTADO
+  USO_CONSIDERABLE
+  DANADO
+}
+
+model Usuario {
+  id             Int           @id @default(autoincrement())
+  nombre         String
+  correo         String        @unique
+  contrasenaHash String
+  telefono       String?
+  foto           String?
+  ciudad         String?
+  estado         String?
+  descripcion    String?
+  rol            RolUsuario    @default(USUARIO)
+  estatus        EstadoUsuario @default(ACTIVO)
+  creadoEn       DateTime      @default(now())
+  actualizadoEn  DateTime      @updatedAt
+
+  libros         Libro[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id             Int       @id @default(autoincrement())
+  nombre         String    @unique
+  descripcion    String?
+  icono          String?
+  activa         Boolean   @default(true)
+  creadoEn       DateTime  @default(now())
+  actualizadoEn  DateTime  @updatedAt
+
+  libros         Libro[]
+
+  @@map("categorias")
+}
+
+model Libro {
+  id                    Int             @id @default(autoincrement())
+  titulo                String
+  autor                 String
+  editorial             String?
+  isbn                  String?
+  anoPublicacion        Int?
+  condicion             CondicionLibro
+  descripcion           String
+  modalidad             ModalidadLibro
+  descripcionIntercambio String?
+  ciudad                String
+  estado                String
+  colonia               String?
+  estatus               EstadoLibro     @default(DISPONIBLE)
+  usuarioId             Int
+  categoriaId           Int
+  creadoEn              DateTime        @default(now())
+  actualizadoEn         DateTime        @updatedAt
+
+  usuario               Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria             Categoria       @relation(fields: [categoriaId], references: [id])
+  imagenes              ImagenLibro[]
+
+  @@index([usuarioId])
+  @@index([categoriaId])
+  @@index([estatus])
+  @@index([ciudad, estado])
+  @@map("libros")
+}
+
+model ImagenLibro {
+  id        Int      @id @default(autoincrement())
+  url       String
+  esPortada Boolean  @default(false)
+  orden     Int      @default(0)
+  libroId   Int
+  creadoEn  DateTime @default(now())
+
+  libro     Libro    @relation(fields: [libroId], references: [id], onDelete: Cascade)
+
+  @@index([libroId])
+  @@map("imagenes_libros")
+}
