@@ -18,18 +18,63 @@ function IniSesionPagina() {
   const [contrasena, setContrasena] = useState("");
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [estaEnviando, setEstaEnviando] = useState(false);
 
-  const manejarEnvio = (evento: FormEvent<HTMLFormElement>) => {
+  const manejarEnvio = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
+    setMensaje("");
 
     if (!correo.trim() || !contrasena.trim()) {
       setMensaje("Completa tu correo electrónico y contraseña.");
       return;
     }
 
-    setMensaje(
-      "Formulario validado. En el siguiente paso conectaremos este inicio de sesión a la API.",
-    );
+    try {
+      setEstaEnviando(true);
+
+      const respuesta = await fetch(
+        "http://localhost:3000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correo: correo.trim(),
+            contrasena,
+          }),
+        },
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setMensaje(
+          datos.mensaje ?? "No fue posible iniciar sesión.",
+        );
+        return;
+      }
+
+      localStorage.setItem("token", datos.token);
+      localStorage.setItem(
+        "usuario",
+        JSON.stringify(datos.usuario),
+      );
+
+      setMensaje("Inicio de sesión correcto. Redirigiendo...");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+
+      setMensaje(
+        "No se pudo conectar con el servidor. Verifica que la API esté ejecutándose.",
+      );
+    } finally {
+      setEstaEnviando(false);
+    }
   };
 
   return (
@@ -68,7 +113,9 @@ function IniSesionPagina() {
           </div>
         </div>
 
-        <p className="auth-quote">“Un libro puede tener muchas vidas.”</p>
+        <p className="auth-quote">
+          “Un libro puede tener muchas vidas.”
+        </p>
       </section>
 
       <section className="auth-form-section">
@@ -83,7 +130,9 @@ function IniSesionPagina() {
           </button>
 
           <div className="auth-title">
-            <span className="section-label">Bienvenido de nuevo</span>
+            <span className="section-label">
+              Bienvenido de nuevo
+            </span>
 
             <h2>Inicia sesión</h2>
 
@@ -101,7 +150,9 @@ function IniSesionPagina() {
                   type="email"
                   placeholder="tu.correo@ejemplo.com"
                   value={correo}
-                  onChange={(evento) => setCorreo(evento.target.value)}
+                  onChange={(evento) =>
+                    setCorreo(evento.target.value)
+                  }
                   autoComplete="email"
                 />
               </span>
@@ -117,7 +168,9 @@ function IniSesionPagina() {
                   type={mostrarContrasena ? "text" : "password"}
                   placeholder="Ingresa tu contraseña"
                   value={contrasena}
-                  onChange={(evento) => setContrasena(evento.target.value)}
+                  onChange={(evento) =>
+                    setContrasena(evento.target.value)
+                  }
                   autoComplete="current-password"
                 />
 
@@ -159,8 +212,11 @@ function IniSesionPagina() {
             <button
               type="submit"
               className="button button-primary auth-submit"
+              disabled={estaEnviando}
             >
-              Iniciar sesión
+              {estaEnviando
+                ? "Iniciando sesión..."
+                : "Iniciar sesión"}
             </button>
           </form>
 

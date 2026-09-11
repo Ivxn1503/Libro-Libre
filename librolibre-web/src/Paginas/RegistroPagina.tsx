@@ -28,9 +28,11 @@ function RegistroPagina() {
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [estaEnviando, setEstaEnviando] = useState(false);
 
-  const manejarEnvio = (evento: FormEvent<HTMLFormElement>) => {
+  const manejarEnvio = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
+    setMensaje("");
 
     if (
       !nombre.trim() ||
@@ -61,9 +63,56 @@ function RegistroPagina() {
       return;
     }
 
-    setMensaje(
-      "Formulario validado. En el siguiente paso guardaremos el usuario en la base de datos.",
-    );
+    try {
+      setEstaEnviando(true);
+
+      const respuesta = await fetch(
+        "http://localhost:3000/api/auth/registro",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nombre: nombre.trim(),
+            correo: correo.trim(),
+            ciudad: ciudad.trim(),
+            estado,
+            contrasena,
+          }),
+        },
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        setMensaje(datos.mensaje ?? "No fue posible crear la cuenta.");
+        return;
+      }
+
+      setMensaje("Cuenta creada correctamente. Redirigiendo...");
+
+      setNombre("");
+      setCorreo("");
+      setCiudad("");
+      setEstado("");
+      setContrasena("");
+      setConfirmarContrasena("");
+      setAceptaTerminos(false);
+      setAceptaPrivacidad(false);
+
+      setTimeout(() => {
+        navigate("/iniciar-sesion");
+      }, 1200);
+    } catch (error) {
+      console.error("Error al registrar usuario:", error);
+
+      setMensaje(
+        "No se pudo conectar con el servidor. Verifica que la API esté ejecutándose.",
+      );
+    } finally {
+      setEstaEnviando(false);
+    }
   };
 
   return (
@@ -350,8 +399,9 @@ function RegistroPagina() {
             <button
               type="submit"
               className="button button-primary auth-submit"
+              disabled={estaEnviando}
             >
-              Crear cuenta
+              {estaEnviando ? "Creando cuenta..." : "Crear cuenta"}
             </button>
           </form>
 
