@@ -2,11 +2,13 @@ import "dotenv/config";
 
 import cors from "cors";
 import express from "express";
+import path from "node:path";
 
 import {
   requiereAutenticacion,
   type PeticionAutenticada,
 } from "./intermedios/autenticacion.js";
+
 import rutasAutenticacion from "./rutas/autenticacion.js";
 import rutasCategorias from "./rutas/categorias.js";
 import rutasLibros from "./rutas/libros.js";
@@ -17,6 +19,13 @@ const puerto = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+app.use(
+  "/uploads",
+  express.static(
+    path.resolve(process.cwd(), "uploads"),
+  ),
+);
 
 app.get("/", (_peticion, respuesta) => {
   return respuesta.json({
@@ -40,7 +49,10 @@ app.use("/api/libros", rutasLibros);
 app.get(
   "/api/perfil",
   requiereAutenticacion,
-  (peticion: PeticionAutenticada, respuesta) => {
+  (
+    peticion: PeticionAutenticada,
+    respuesta,
+  ) => {
     return respuesta.json({
       mensaje: "Acceso autorizado al perfil.",
       usuario: peticion.usuario,

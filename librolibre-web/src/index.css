@@ -25,7 +25,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -41,10 +42,6 @@ a {
   color: inherit;
   text-decoration: none;
 }
-
-/* =========================
-   Elementos generales
-   ========================= */
 
 h1,
 h2,
@@ -66,10 +63,6 @@ h4 {
   min-height: 100vh;
   overflow: hidden;
 }
-
-/* =========================
-   Encabezado
-   ========================= */
 
 .encabezado {
   align-items: center;
@@ -108,13 +101,17 @@ h4 {
   gap: 0.45rem;
 }
 
+.navegacion button,
+.navegacion-menu button {
+  border-radius: 10px;
+  color: #4c5c4d;
+  font-weight: 700;
+}
+
 .navegacion button {
   background: transparent;
   border: 0;
-  border-radius: 10px;
-  color: #4c5c4d;
   font-size: 0.94rem;
-  font-weight: 700;
   padding: 0.6rem 0.75rem;
   transition:
     background-color 180ms ease,
@@ -138,10 +135,6 @@ h4 {
 .navegacion-menu {
   display: none;
 }
-
-/* =========================
-   Botones generales
-   ========================= */
 
 .boton,
 .button {
@@ -175,7 +168,9 @@ h4 {
 }
 
 .boton:focus-visible,
-.button:focus-visible {
+.button:focus-visible,
+.boton-ayuda:focus-visible,
+.quitar-imagen:focus-visible {
   outline: 3px solid rgba(230, 169, 107, 0.85);
   outline-offset: 3px;
 }
@@ -255,10 +250,6 @@ h4 {
   width: 100%;
 }
 
-/* =========================
-   Hero
-   ========================= */
-
 .hero {
   background:
     radial-gradient(circle at 78% 30%, #f7e7a9 0, transparent 20%),
@@ -293,7 +284,8 @@ h4 {
   margin-bottom: 1.25rem;
 }
 
-.hero h1 span {
+.hero h1 span,
+.auth-visual h1 span {
   color: #477a44;
 }
 
@@ -343,33 +335,46 @@ h4 {
   width: 250px;
 }
 
-.libro {
+.libro,
+.stack-book {
   border: 3px solid rgba(68, 72, 38, 0.14);
   border-radius: 8px;
   box-shadow: 0 12px 18px rgba(60, 74, 39, 0.14);
-  color: #ffffff;
   font-family: "Poppins", sans-serif;
   font-weight: 800;
+  text-align: center;
+}
+
+.libro {
+  color: #ffffff;
   margin-top: -4px;
   padding: 0.85rem 1rem;
-  text-align: center;
   transform: rotate(1deg);
   width: 100%;
 }
 
-.libro-verde {
+.libro-verde,
+.stack-book-one {
   background: #477a44;
 }
 
-.libro-amarillo {
+.libro-amarillo,
+.stack-book-two {
   background: #e8b93b;
   color: #554711;
+}
+
+.libro-amarillo {
   transform: rotate(-2deg);
   width: 92%;
 }
 
-.libro-naranja {
+.libro-naranja,
+.stack-book-three {
   background: #c26a35;
+}
+
+.libro-naranja {
   transform: rotate(2deg);
   width: 97%;
 }
@@ -401,10 +406,6 @@ h4 {
   right: 7%;
   top: 12%;
 }
-
-/* =========================
-   Buscador
-   ========================= */
 
 .buscador-seccion {
   margin: -38px auto 0;
@@ -498,11 +499,11 @@ h4 {
   transform: translateY(-2px);
 }
 
-/* =========================
-   Libros
-   ========================= */
-
-.seccion-libros {
+.seccion-libros,
+.seccion-como-funciona,
+.seccion-impacto,
+.seccion-comunidad,
+.pie-pagina {
   margin: 0 auto;
   max-width: 1240px;
   padding: 5rem 1.5rem;
@@ -604,7 +605,6 @@ h4 {
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  font-family: "Poppins", sans-serif;
   height: 100%;
   justify-content: center;
   padding: 1.2rem;
@@ -696,13 +696,17 @@ h4 {
   box-shadow: none;
 }
 
-.mensaje-estado {
+.mensaje-estado,
+.estado-vacio {
   background: #ffffff;
-  border: 1px solid #e5eddf;
-  border-radius: 14px;
-  color: #557158;
-  padding: 1.25rem;
+  border-radius: 18px;
+  padding: 3rem 1.5rem;
   text-align: center;
+}
+
+.mensaje-estado {
+  border: 1px solid #e5eddf;
+  color: #557158;
 }
 
 .mensaje-estado.error {
@@ -711,11 +715,7 @@ h4 {
 }
 
 .estado-vacio {
-  background: #ffffff;
   border: 1px dashed #c9d8bf;
-  border-radius: 18px;
-  padding: 3rem 1.5rem;
-  text-align: center;
 }
 
 .estado-vacio span {
@@ -732,25 +732,17 @@ h4 {
   margin-bottom: 1.2rem;
 }
 
-/* =========================
-   Autenticación
-   ========================= */
-
 .auth-page {
   background: #fff8e7;
   display: grid;
   grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
   min-height: 100vh;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .auth-visual {
   background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(255, 255, 255, 0.25),
-      transparent 25%
-    ),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.25), transparent 25%),
     linear-gradient(145deg, #dcefd2 0%, #eaf6df 48%, #f7eab9 100%);
   display: flex;
   flex-direction: column;
@@ -762,47 +754,8 @@ h4 {
 
 .register-visual {
   background:
-    radial-gradient(
-      circle at 80% 15%,
-      rgba(255, 255, 255, 0.35),
-      transparent 25%
-    ),
+    radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.35), transparent 25%),
     linear-gradient(145deg, #e1f2d7 0%, #eff8e7 50%, #f8e8b7 100%);
-}
-
-.auth-logo {
-  align-items: center;
-  color: #2e7d32;
-  display: inline-flex;
-  font-family: "Poppins", sans-serif;
-  gap: 0.7rem;
-  width: fit-content;
-}
-
-.auth-logo-icon {
-  align-items: center;
-  background: #2e7d32;
-  border-radius: 14px;
-  color: #ffffff;
-  display: inline-flex;
-  height: 44px;
-  justify-content: center;
-  width: 44px;
-}
-
-.auth-logo strong {
-  display: block;
-  font-size: 1.35rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.auth-logo small {
-  color: #5d755f;
-  display: block;
-  font-family: "Lato", Arial, sans-serif;
-  font-size: 0.72rem;
-  margin-top: 0.25rem;
 }
 
 .auth-visual-content {
@@ -837,7 +790,6 @@ h4 {
 }
 
 .auth-visual h1 span {
-  color: #4f8b51;
   display: block;
 }
 
@@ -846,15 +798,6 @@ h4 {
   font-size: 1.05rem;
   line-height: 1.7;
   max-width: 480px;
-}
-
-.auth-visual-points {
-  color: #456148;
-  display: flex;
-  flex-direction: column;
-  font-weight: 700;
-  gap: 0.7rem;
-  margin-top: 1.5rem;
 }
 
 .auth-quote {
@@ -874,29 +817,15 @@ h4 {
 }
 
 .stack-book {
-  border: 3px solid rgba(68, 72, 38, 0.14);
-  border-radius: 9px;
-  box-shadow: 0 10px 18px rgba(60, 74, 39, 0.13);
-  color: #ffffff;
-  font-family: "Poppins", sans-serif;
-  font-weight: 800;
   margin-top: -4px;
   padding: 0.75rem 1rem;
-  text-align: center;
-}
-
-.stack-book-one {
-  background: #477a44;
 }
 
 .stack-book-two {
-  background: #e8b93b;
-  color: #554711;
   transform: rotate(-2deg);
 }
 
 .stack-book-three {
-  background: #c26a35;
   transform: rotate(2deg);
 }
 
@@ -906,11 +835,13 @@ h4 {
   display: flex;
   justify-content: center;
   min-height: 100vh;
+  overflow: visible;
   padding: 3rem 7%;
 }
 
 .auth-form-wrapper {
   max-width: 540px;
+  overflow: visible;
   width: 100%;
 }
 
@@ -966,6 +897,7 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 1.15rem;
+  overflow: visible;
 }
 
 .auth-form label {
@@ -1005,7 +937,8 @@ h4 {
 }
 
 .input-wrapper input,
-.input-wrapper select {
+.input-wrapper select,
+.input-wrapper textarea {
   background: transparent;
   border: 0;
   color: #2c3d2e;
@@ -1017,9 +950,42 @@ h4 {
   width: 100%;
 }
 
+.input-wrapper input,
+.input-wrapper select {
+  min-height: 48px;
+}
+
+.input-wrapper textarea {
+  padding: 0.8rem 0;
+  resize: vertical;
+}
+
 .input-wrapper select {
   appearance: none;
   cursor: pointer;
+}
+
+.input-file-wrapper input[type="file"] {
+  cursor: pointer;
+  padding: 0.65rem 0;
+}
+
+.input-file-wrapper input[type="file"]::file-selector-button {
+  background: #edf7e9;
+  border: 1px solid #c9dfc0;
+  border-radius: 8px;
+  color: #2e7d32;
+  cursor: pointer;
+  font-weight: 700;
+  margin-right: 0.65rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.input-file-wrapper + small {
+  color: #6a786c;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
 }
 
 .select-wrapper {
@@ -1049,38 +1015,100 @@ h4 {
   color: #2e7d32;
 }
 
-.checkbox-group {
+.modalidad-grupo {
+  border: 1px solid #dce7d6;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  margin: 0.35rem 0;
+  gap: 0.8rem;
+  padding: 1rem;
 }
 
-.checkbox-label {
+.modalidad-grupo legend {
+  color: #3f5342;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+
+.modalidad-opcion {
   align-items: flex-start !important;
-  color: #69766b !important;
+  background: #fffdf7;
+  border: 1px solid #e4eddf;
+  border-radius: 12px;
+  cursor: pointer;
   display: flex !important;
   flex-direction: row !important;
-  font-family: "Lato", Arial, sans-serif !important;
-  font-size: 0.85rem !important;
-  font-weight: 400 !important;
-  gap: 0.55rem !important;
+  gap: 0.7rem !important;
+  padding: 0.8rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
 }
 
-.checkbox-label input {
+.modalidad-opcion:hover {
+  background: #edf7e9;
+  border-color: #9fc59d;
+}
+
+.modalidad-opcion input {
   accent-color: #2e7d32;
   margin-top: 0.2rem;
 }
 
-.checkbox-label button {
-  background: transparent;
+.modalidad-opcion span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.modalidad-opcion strong {
+  color: #29472d;
+  font-family: "Poppins", sans-serif;
+}
+
+.modalidad-opcion small {
+  color: #69766b;
+  font-family: "Lato", Arial, sans-serif;
+  font-weight: 400;
+}
+
+.vista-previa-imagen {
+  position: relative;
+  width: 180px;
+  height: 230px;
+  margin-top: -0.3rem;
+  overflow: hidden;
+  border: 1px solid #d8e2d4;
+  border-radius: 14px;
+  background: #f3f6ef;
+}
+
+.vista-previa-imagen img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.quitar-imagen {
+  align-items: center;
+  background: rgba(41, 71, 45, 0.88);
   border: 0;
-  color: #2e7d32;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 0;
-  text-decoration: underline;
+  border-radius: 50%;
+  color: #ffffff;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 30px;
+}
+
+.quitar-imagen:hover {
+  background: #a8413b;
 }
 
 .form-message {
@@ -1093,10 +1121,10 @@ h4 {
   padding: 0.8rem 0.95rem;
 }
 
-.auth-submit {
-  border-radius: 14px;
-  min-height: 52px;
-  width: 100%;
+.form-message-error {
+  background: #fff0ed;
+  border-color: #e8b1a8;
+  color: #a8413b;
 }
 
 .auth-submit:disabled {
@@ -1136,17 +1164,100 @@ h4 {
   text-decoration: underline;
 }
 
-/* =========================
-   Secciones informativas
-   ========================= */
+.label-con-ayuda {
+  position: relative;
+  overflow: visible;
+}
 
-.seccion-como-funciona,
-.seccion-impacto,
-.seccion-comunidad,
-.pie-pagina {
-  margin: 0 auto;
-  max-width: 1240px;
-  padding: 5rem 1.5rem;
+.titulo-con-ayuda {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.boton-ayuda {
+  align-items: center;
+  background: #e8f2e3;
+  border: 0;
+  border-radius: 50%;
+  color: #2e7d32;
+  display: inline-flex;
+  height: 16px;
+  justify-content: center;
+  padding: 0;
+  width: 16px;
+}
+
+.boton-ayuda svg {
+  height: 12px;
+  width: 12px;
+}
+
+.boton-ayuda:hover {
+  background: #2e7d32;
+  color: #ffffff;
+}
+
+.ayuda-isbn {
+  background: #ffffff;
+  border: 1px solid #c9dec3;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(35, 70, 42, 0.18);
+  color: #36513a;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  left: 0;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 300px;
+  padding: 11px 13px;
+  position: absolute;
+  top: 27px;
+  width: max-content;
+  z-index: 50;
+}
+
+.rejilla-vistas-previas {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: -0.3rem;
+  max-width: 430px;
+}
+
+.rejilla-vistas-previas .vista-previa-imagen {
+  height: 145px;
+  margin: 0;
+  width: 100%;
+}
+
+.rejilla-vistas-previas .vista-previa-imagen img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.insignia-portada {
+  background: #2e7d32;
+  border-radius: 999px;
+  bottom: 6px;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  left: 6px;
+  padding: 0.25rem 0.45rem;
+  position: absolute;
+}
+
+.rejilla-vistas-previas .quitar-imagen {
+  height: 26px;
+  padding: 0;
+  right: 6px;
+  top: 6px;
+  width: 26px;
 }
 
 .seccion-como-funciona {
@@ -1265,45 +1376,18 @@ h4 {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* =========================
-   Responsive
-   ========================= */
-
 @media (max-width: 900px) {
   .encabezado {
     padding: 0 5%;
   }
 
   .navegacion {
-    display: none;
-  }
-
-  .menu-movil {
-    display: inline-flex;
-  }
-
-  .navegacion-menu {
-    background: #fffdf7;
-    border-bottom: 1px solid #eee7d6;
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 1rem 5%;
   }
 
-  .navegacion-menu button {
-    background: transparent;
-    border: 0;
-    border-radius: 10px;
-    color: #4c5c4d;
-    font-weight: 700;
-    padding: 0.75rem;
-    text-align: left;
-  }
-
-  .navegacion-menu button:hover {
-    background: #edf7e9;
-    color: #2e7d32;
+  .menu-movil,
+  .navegacion-menu {
+    display: none;
   }
 
   .hero {
@@ -1346,6 +1430,35 @@ h4 {
 
   .marca {
     font-size: 1.2rem;
+  }
+
+  .navegacion {
+    display: none;
+  }
+
+  .menu-movil {
+    display: inline-flex;
+  }
+
+  .navegacion-menu {
+    background: #fffdf7;
+    border-bottom: 1px solid #eee7d6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 5%;
+  }
+
+  .navegacion-menu button {
+    background: transparent;
+    border: 0;
+    padding: 0.75rem;
+    text-align: left;
+  }
+
+  .navegacion-menu button:hover {
+    background: #edf7e9;
+    color: #2e7d32;
   }
 
   .acciones-encabezado .texto {
@@ -1425,5 +1538,314 @@ h4 {
 
   .estadisticas {
     grid-template-columns: 1fr;
+  }
+
+  .ayuda-isbn {
+    left: auto;
+    right: 0;
+    width: min(300px, calc(100vw - 3rem));
+  }
+
+  .rejilla-vistas-previas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rejilla-vistas-previas .vista-previa-imagen {
+    height: 135px;
+  }
+}
+
+.mensaje-imagenes-error {
+  background: #fff0ed;
+  border: 1px solid #e8b1a8;
+  border-radius: 12px;
+  color: #a8413b;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.9rem;
+  margin: -0.2rem 0 0;
+  padding: 0.8rem 0.95rem;
+}
+
+/* Únicamente estilos agregados para la foto de perfil */
+.vista-previa-perfil {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  overflow: hidden;
+  border: 1px solid #d8e2d4;
+  border-radius: 50%;
+  background: #f3f6ef;
+}
+
+.vista-previa-perfil img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vista-previa-perfil .quitar-imagen {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.cuenta-encabezado {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.avatar-encabezado {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #d8e2d4;
+  background-color: #f3f6ef;
+}
+
+@media (max-width: 600px) {
+  .avatar-encabezado {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+
+/*
+  Agrega este bloque AL FINAL de tu index.css.
+  Solo ajusta tamaños y distribución responsive.
+  No modifica colores, tipografías ni estilos existentes.
+*/
+
+/* Tablet: 601px a 900px */
+@media (min-width: 601px) and (max-width: 900px) {
+  .encabezado {
+    padding: 0 5%;
+  }
+
+  .marca {
+    font-size: 1.35rem;
+  }
+
+  .navegacion {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  .navegacion button {
+    font-size: 0.84rem;
+    padding: 0.55rem 0.5rem;
+  }
+
+  .acciones-encabezado {
+    gap: 0.35rem;
+  }
+
+  .acciones-encabezado .boton {
+    font-size: 0.78rem;
+    min-height: 42px;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .menu-movil,
+  .navegacion-menu {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: 1fr 0.85fr;
+    min-height: 400px;
+    padding: 4rem 7% 4rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.3rem, 5vw, 3.5rem);
+  }
+
+  .hero-descripcion {
+    font-size: 1rem;
+  }
+
+  .hero-ilustracion {
+    min-height: 240px;
+  }
+
+  .pila-libros {
+    width: 210px;
+  }
+
+  .seccion-libros,
+  .seccion-como-funciona,
+  .seccion-impacto,
+  .seccion-comunidad,
+  .pie-pagina {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+  .rejilla-libros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-page {
+    grid-template-columns: minmax(300px, 0.8fr) minmax(430px, 1.2fr);
+  }
+
+  .auth-visual,
+  .auth-form-section {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+}
+
+/* PC: más de 900px */
+@media (min-width: 901px) {
+  .encabezado {
+    padding-left: 8%;
+    padding-right: 8%;
+  }
+
+  .navegacion {
+    display: flex;
+  }
+
+  .menu-movil,
+  .navegacion-menu {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  }
+
+  .rejilla-libros {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Teléfono: hasta 600px */
+@media (max-width: 600px) {
+  .encabezado {
+    min-height: 66px;
+    padding-left: 4%;
+    padding-right: 4%;
+  }
+
+  .marca {
+    font-size: 1.2rem;
+  }
+
+  .navegacion {
+    display: none;
+  }
+
+  .menu-movil {
+    display: inline-flex;
+  }
+
+  .navegacion-menu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 3.5rem 6% 4.6rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.2rem, 10vw, 3rem);
+  }
+
+  .hero-descripcion {
+    font-size: 1rem;
+  }
+
+  .hero-ilustracion {
+    min-height: 200px;
+  }
+
+  .pila-libros {
+    width: min(220px, 75vw);
+  }
+
+  .hero-acciones {
+    flex-direction: column;
+  }
+
+  .hero-acciones .boton {
+    width: 100%;
+  }
+
+  .buscador-campo {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .buscador-campo .boton {
+    width: 100%;
+  }
+
+  .seccion-libros,
+  .seccion-como-funciona,
+  .seccion-impacto,
+  .seccion-comunidad,
+  .pie-pagina {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .rejilla-libros {
+    grid-template-columns: 1fr;
+  }
+
+  .seccion-encabezado {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .seccion-impacto {
+    grid-template-columns: 1fr;
+  }
+
+  .estadisticas {
+    grid-template-columns: 1fr;
+  }
+
+  .two-columns {
+    flex-direction: column;
+  }
+
+  .auth-page {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-visual {
+    min-height: 360px;
+    padding: 1.5rem;
+  }
+
+  .auth-form-section {
+    min-height: auto;
+    padding: 2.5rem 1.25rem;
+  }
+
+  .rejilla-vistas-previas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rejilla-vistas-previas .vista-previa-imagen {
+    height: 135px;
+  }
+
+  .avatar-encabezado {
+    height: 42px;
+    width: 42px;
   }
 }
