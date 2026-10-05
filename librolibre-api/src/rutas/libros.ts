@@ -4,6 +4,7 @@ import {
   type PeticionAutenticada,
   requiereAutenticacion,
 } from "../intermedios/autenticacion.js";
+
 import subirImagen from "../intermedios/subidaImagen.js";
 import prisma from "../prisma.js";
 
@@ -81,6 +82,7 @@ function obtenerTextoConsulta(
   }
 
   const texto = valor.trim();
+
   return texto || undefined;
 }
 
@@ -100,174 +102,327 @@ function obtenerNumeroConsulta(
   return numero;
 }
 
-/*
-|--------------------------------------------------------------------------
-| GET /api/libros
-|--------------------------------------------------------------------------
-| Feed público de libros disponibles.
-*/
-router.get("/", async (peticion, respuesta) => {
-  try {
-    const texto = obtenerTextoConsulta(peticion.query.texto);
-    const categoriaId = obtenerNumeroConsulta(
-      peticion.query.categoriaId,
-    );
-    const ciudad = obtenerTextoConsulta(peticion.query.ciudad);
-    const estado = obtenerTextoConsulta(peticion.query.estado);
-    const modalidadConsulta = obtenerTextoConsulta(
-      peticion.query.modalidad,
-    );
-    const condicionConsulta = obtenerTextoConsulta(
-      peticion.query.condicion,
-    );
-    const estadoConsulta = obtenerTextoConsulta(
-      peticion.query.estatus,
-    );
+const incluirDatosLibro = {
+  categoria: {
+    select: {
+      id: true,
+      nombre: true,
+      descripcion: true,
+      icono: true,
+    },
+  },
 
-    if (
-      modalidadConsulta &&
-      !esModalidadValida(modalidadConsulta)
-    ) {
-      return respuesta.status(400).json({
-        mensaje: "La modalidad debe ser REGALO o INTERCAMBIO.",
+  usuario: {
+    select: {
+      id: true,
+      nombre: true,
+      telefono: true,
+      ciudad: true,
+      estado: true,
+      foto: true,
+      descripcion: true,
+    },
+  },
+
+  imagenes: {
+    orderBy: {
+      orden: "asc" as const,
+    },
+
+    select: {
+      id: true,
+      url: true,
+      esPortada: true,
+      orden: true,
+    },
+  },
+};
+
+/**
+ * Obtener libros para explorar
+ */
+router.get(
+  "/",
+  requiereAutenticacion,
+  async (
+    peticion: PeticionAutenticada,
+    respuesta,
+  ) => {
+    try {
+      const texto = obtenerTextoConsulta(
+        peticion.query.texto,
+      );
+
+      const categoriaId = obtenerNumeroConsulta(
+        peticion.query.categoriaId,
+      );
+
+      const ciudad = obtenerTextoConsulta(
+        peticion.query.ciudad,
+      );
+
+      const estado = obtenerTextoConsulta(
+        peticion.query.estado,
+      );
+
+      const modalidadConsulta = obtenerTextoConsulta(
+        peticion.query.modalidad,
+      );
+
+      const condicionConsulta = obtenerTextoConsulta(
+        peticion.query.condicion,
+      );
+
+      const estadoConsulta = obtenerTextoConsulta(
+        peticion.query.estatus,
+      );
+
+      if (
+        modalidadConsulta &&
+        !esModalidadValida(modalidadConsulta)
+      ) {
+        return respuesta.status(400).json({
+          mensaje: "La modalidad debe ser REGALO o INTERCAMBIO.",
+        });
+      }
+
+      if (
+        condicionConsulta &&
+        !esCondicionValida(condicionConsulta)
+      ) {
+        return respuesta.status(400).json({
+          mensaje: "La condición indicada no es válida.",
+        });
+      }
+
+      const estatusTexto = estadoConsulta || "DISPONIBLE";
+
+      if (!esEstadoValido(estatusTexto)) {
+        return respuesta.status(400).json({
+          mensaje: "El estatus indicado no es válido.",
+        });
+      }
+
+      if (!peticion.usuario) {
+        return respuesta.status(401).json({
+          mensaje:
+            "No fue posible identificar al usuario autenticado.",
+        });
+      }
+
+      const libros = await prisma.libro.findMany({
+        where: {
+          estatus: estatusTexto as never,
+
+          usuarioId: {
+            not: peticion.usuario.id,
+          },
+
+          ...(categoriaId ? { categoriaId } : {}),
+
+          ...(modalidadConsulta &&
+          esModalidadValida(modalidadConsulta)
+            ? {
+                modalidad: modalidadConsulta as never,
+              }
+            : {}),
+
+          ...(condicionConsulta &&
+          esCondicionValida(condicionConsulta)
+            ? {
+                condicion: condicionConsulta as never,
+              }
+            : {}),
+
+          ...(ciudad
+            ? {
+                ciudad: {
+                  equals: ciudad,
+                  mode: "insensitive",
+                },
+              }
+            : {}),
+
+          ...(estado
+            ? {
+                estado: {
+                  equals: estado,
+                  mode: "insensitive",
+                },
+              }
+            : {}),
+
+          ...(texto
+            ? {
+                OR: [
+                  {
+                    titulo: {
+                      contains: texto,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    autor: {
+                      contains: texto,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    editorial: {
+                      contains: texto,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    descripcion: {
+                      contains: texto,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+
+        orderBy: {
+          creadoEn: "desc",
+        },
+
+        include: incluirDatosLibro,
+      });
+
+      return respuesta.json({
+        total: libros.length,
+        libros,
+      });
+    } catch (error) {
+      console.error("Error al obtener libros:", error);
+
+      return respuesta.status(500).json({
+        mensaje: "Ocurrió un error al obtener los libros.",
       });
     }
+  },
+);
 
-    if (
-      condicionConsulta &&
-      !esCondicionValida(condicionConsulta)
-    ) {
-      return respuesta.status(400).json({
-        mensaje: "La condición indicada no es válida.",
+/**
+ * Obtener mis publicaciones
+ *
+ * Esta ruta debe estar antes de /:id.
+ */
+router.get(
+  "/mios",
+  requiereAutenticacion,
+  async (
+    peticion: PeticionAutenticada,
+    respuesta,
+  ) => {
+    try {
+      if (!peticion.usuario) {
+        return respuesta.status(401).json({
+          mensaje:
+            "No fue posible identificar al usuario autenticado.",
+        });
+      }
+
+      const libros = await prisma.libro.findMany({
+        where: {
+          usuarioId: peticion.usuario.id,
+          estatus: {
+            not: "ELIMINADO" as never,
+          },
+        },
+
+        orderBy: {
+          creadoEn: "desc",
+        },
+
+        include: incluirDatosLibro,
+      });
+
+      return respuesta.json({
+        total: libros.length,
+        libros,
+      });
+    } catch (error) {
+      console.error(
+        "Error al obtener mis publicaciones:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje:
+          "No fue posible obtener tus publicaciones.",
       });
     }
+  },
+);
 
-    const estatusTexto = estadoConsulta || "DISPONIBLE";
+/**
+ * Obtener estadísticas
+ */
+router.get(
+  "/estadisticas",
+  async (_peticion, respuesta) => {
+    try {
+      const [
+        librosReutilizados,
+        usuariosEnComunidad,
+        intercambiosRealizados,
+        librosRegalados,
+      ] = await Promise.all([
+        prisma.libro.count({
+          where: {
+            estatus: {
+              in: ["RESERVADO", "ENTREGADO"] as never,
+            },
+          },
+        }),
 
-    if (!esEstadoValido(estatusTexto)) {
-      return respuesta.status(400).json({
-        mensaje: "El estatus indicado no es válido.",
+        prisma.usuario.count({
+          where: {
+            estatus: "ACTIVO" as never,
+          },
+        }),
+
+        prisma.libro.count({
+          where: {
+            modalidad: "INTERCAMBIO" as never,
+            estatus: "ENTREGADO" as never,
+          },
+        }),
+
+        prisma.libro.count({
+          where: {
+            modalidad: "REGALO" as never,
+            estatus: "ENTREGADO" as never,
+          },
+        }),
+      ]);
+
+      return respuesta.json({
+        librosReutilizados,
+        usuariosEnComunidad,
+        intercambiosRealizados,
+        librosRegalados,
+      });
+    } catch (error) {
+      console.error(
+        "Error al obtener estadísticas:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje:
+          "No fue posible obtener las estadísticas.",
       });
     }
+  },
+);
 
-    const libros = await prisma.libro.findMany({
-      where: {
-        estatus: estatusTexto as never,
-
-        ...(categoriaId ? { categoriaId } : {}),
-
-        ...(modalidadConsulta &&
-        esModalidadValida(modalidadConsulta)
-          ? { modalidad: modalidadConsulta as never }
-          : {}),
-
-        ...(condicionConsulta &&
-        esCondicionValida(condicionConsulta)
-          ? { condicion: condicionConsulta as never }
-          : {}),
-
-        ...(ciudad
-          ? {
-              ciudad: {
-                equals: ciudad,
-                mode: "insensitive",
-              },
-            }
-          : {}),
-
-        ...(estado
-          ? {
-              estado: {
-                equals: estado,
-                mode: "insensitive",
-              },
-            }
-          : {}),
-
-        ...(texto
-          ? {
-              OR: [
-                {
-                  titulo: {
-                    contains: texto,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  autor: {
-                    contains: texto,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  editorial: {
-                    contains: texto,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  descripcion: {
-                    contains: texto,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : {}),
-      },
-      orderBy: {
-        creadoEn: "desc",
-      },
-      include: {
-        categoria: {
-          select: {
-            id: true,
-            nombre: true,
-            icono: true,
-          },
-        },
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            ciudad: true,
-            estado: true,
-            foto: true,
-          },
-        },
-        imagenes: {
-          orderBy: {
-            orden: "asc",
-          },
-          select: {
-            id: true,
-            url: true,
-            esPortada: true,
-            orden: true,
-          },
-        },
-      },
-    });
-
-    return respuesta.json({
-      total: libros.length,
-      libros,
-    });
-  } catch (error) {
-    console.error("Error al obtener libros:", error);
-
-    return respuesta.status(500).json({
-      mensaje: "Ocurrió un error al obtener los libros.",
-    });
-  }
-});
-
-/*
-|--------------------------------------------------------------------------
-| POST /api/libros
-|--------------------------------------------------------------------------
-| Publica un libro y guarda hasta seis imágenes.
-*/
+/**
+ * Publicar libro
+ */
 router.post(
   "/",
   requiereAutenticacion,
@@ -277,8 +432,246 @@ router.post(
     respuesta,
   ) => {
     try {
-      console.log("Archivos recibidos:", peticion.files);
-      console.log("Campos recibidos:", peticion.body);
+      const {
+        titulo,
+        autor,
+        editorial,
+        isbn,
+        anoPublicacion,
+        categoriaId,
+        condicion,
+        descripcion,
+        modalidad,
+        descripcionIntercambio,
+        ciudad,
+        estado,
+        colonia,
+      } = peticion.body;
+
+      if (
+        !titulo?.trim() ||
+        !autor?.trim() ||
+        !categoriaId ||
+        !condicion ||
+        !descripcion?.trim() ||
+        !modalidad ||
+        !ciudad?.trim() ||
+        !estado?.trim()
+      ) {
+        return respuesta.status(400).json({
+          mensaje:
+            "Título, autor, categoría, condición, descripción, modalidad, ciudad y estado son obligatorios.",
+        });
+      }
+
+      const categoriaIdNumero = Number(categoriaId);
+
+      if (
+        !Number.isInteger(categoriaIdNumero) ||
+        categoriaIdNumero < 1
+      ) {
+        return respuesta.status(400).json({
+          mensaje:
+            "La categoría seleccionada no es válida.",
+        });
+      }
+
+      if (!esCondicionValida(condicion)) {
+        return respuesta.status(400).json({
+          mensaje:
+            "La condición del libro no es válida.",
+        });
+      }
+
+      if (!esModalidadValida(modalidad)) {
+        return respuesta.status(400).json({
+          mensaje:
+            "La modalidad debe ser REGALO o INTERCAMBIO.",
+        });
+      }
+
+      if (
+        modalidad === "INTERCAMBIO" &&
+        !descripcionIntercambio?.trim()
+      ) {
+        return respuesta.status(400).json({
+          mensaje:
+            "Describe qué te interesa recibir a cambio del libro.",
+        });
+      }
+
+      let anoPublicacionNumero: number | null = null;
+
+      if (
+        anoPublicacion !== undefined &&
+        anoPublicacion !== null &&
+        anoPublicacion !== ""
+      ) {
+        anoPublicacionNumero = Number(anoPublicacion);
+
+        const anoActual = new Date().getFullYear();
+
+        if (
+          !Number.isInteger(anoPublicacionNumero) ||
+          anoPublicacionNumero < 1000 ||
+          anoPublicacionNumero > anoActual
+        ) {
+          return respuesta.status(400).json({
+            mensaje:
+              "El año de publicación no es válido.",
+          });
+        }
+      }
+
+      const categoria =
+        await prisma.categoria.findFirst({
+          where: {
+            id: categoriaIdNumero,
+            activa: true,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (!categoria) {
+        return respuesta.status(404).json({
+          mensaje:
+            "La categoría no existe o no está activa.",
+        });
+      }
+
+      if (!peticion.usuario) {
+        return respuesta.status(401).json({
+          mensaje:
+            "No fue posible identificar al usuario autenticado.",
+        });
+      }
+
+      const archivos = Array.isArray(peticion.files)
+        ? peticion.files
+        : [];
+
+      if (archivos.length === 0) {
+        return respuesta.status(400).json({
+          mensaje:
+            "Debes agregar al menos una imagen.",
+        });
+      }
+
+      const libroNuevo = await prisma.libro.create({
+        data: {
+          titulo: titulo.trim(),
+          autor: autor.trim(),
+          editorial: editorial?.trim() || null,
+          isbn: isbn?.trim() || null,
+          anoPublicacion: anoPublicacionNumero,
+          categoriaId: categoria.id,
+          condicion: condicion as never,
+          descripcion: descripcion.trim(),
+          modalidad: modalidad as never,
+
+          descripcionIntercambio:
+            modalidad === "INTERCAMBIO"
+              ? descripcionIntercambio.trim()
+              : null,
+
+          ciudad: ciudad.trim(),
+          estado: estado.trim(),
+          colonia: colonia?.trim() || null,
+          usuarioId: peticion.usuario.id,
+        },
+      });
+
+      await prisma.imagenLibro.createMany({
+        data: archivos.map((archivo, indice) => ({
+          libroId: libroNuevo.id,
+          url: `/uploads/libros/${archivo.filename}`,
+          esPortada: indice === 0,
+          orden: indice + 1,
+        })),
+      });
+
+      const libroConImagenes =
+        await prisma.libro.findUnique({
+          where: {
+            id: libroNuevo.id,
+          },
+
+          include: incluirDatosLibro,
+        });
+
+      return respuesta.status(201).json({
+        mensaje: "Libro publicado correctamente.",
+        libro: libroConImagenes,
+      });
+    } catch (error) {
+      console.error("Error al publicar libro:", error);
+
+      return respuesta.status(500).json({
+        mensaje:
+          "Ocurrió un error interno al publicar el libro.",
+      });
+    }
+  },
+);
+
+/**
+ * Editar publicación
+ *
+ * Si no se envían imágenes nuevas,
+ * conserva las imágenes actuales.
+ *
+ * Si se envían imágenes nuevas,
+ * reemplaza las imágenes anteriores.
+ */
+router.put(
+  "/:id",
+  requiereAutenticacion,
+  subirImagen.array("imagenes", 6),
+  async (
+    peticion: PeticionAutenticada,
+    respuesta,
+  ) => {
+    try {
+      const id = Number(peticion.params.id);
+
+      if (!Number.isInteger(id) || id < 1) {
+        return respuesta.status(400).json({
+          mensaje:
+            "El identificador del libro no es válido.",
+        });
+      }
+
+      if (!peticion.usuario) {
+        return respuesta.status(401).json({
+          mensaje:
+            "No fue posible identificar al usuario autenticado.",
+        });
+      }
+
+      const libroExistente =
+        await prisma.libro.findFirst({
+          where: {
+            id,
+            usuarioId: peticion.usuario.id,
+            estatus: {
+              not: "ELIMINADO" as never,
+            },
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (!libroExistente) {
+        return respuesta.status(404).json({
+          mensaje:
+            "No se encontró la publicación o no tienes permiso para editarla.",
+        });
+      }
 
       const {
         titulo,
@@ -319,19 +712,22 @@ router.post(
         categoriaIdNumero < 1
       ) {
         return respuesta.status(400).json({
-          mensaje: "La categoría seleccionada no es válida.",
+          mensaje:
+            "La categoría seleccionada no es válida.",
         });
       }
 
       if (!esCondicionValida(condicion)) {
         return respuesta.status(400).json({
-          mensaje: "La condición del libro no es válida.",
+          mensaje:
+            "La condición del libro no es válida.",
         });
       }
 
       if (!esModalidadValida(modalidad)) {
         return respuesta.status(400).json({
-          mensaje: "La modalidad debe ser REGALO o INTERCAMBIO.",
+          mensaje:
+            "La modalidad debe ser REGALO o INTERCAMBIO.",
         });
       }
 
@@ -362,24 +758,136 @@ router.post(
           anoPublicacionNumero > anoActual
         ) {
           return respuesta.status(400).json({
-            mensaje: "El año de publicación no es válido.",
+            mensaje:
+              "El año de publicación no es válido.",
           });
         }
       }
 
-      const categoria = await prisma.categoria.findFirst({
-        where: {
-          id: categoriaIdNumero,
-          activa: true,
-        },
-        select: {
-          id: true,
-        },
-      });
+      const categoria =
+        await prisma.categoria.findFirst({
+          where: {
+            id: categoriaIdNumero,
+            activa: true,
+          },
+
+          select: {
+            id: true,
+          },
+        });
 
       if (!categoria) {
         return respuesta.status(404).json({
-          mensaje: "La categoría no existe o no está activa.",
+          mensaje:
+            "La categoría no existe o no está activa.",
+        });
+      }
+
+      const archivos = Array.isArray(peticion.files)
+        ? peticion.files
+        : [];
+
+      const libroActualizado =
+        await prisma.$transaction(
+          async (transaccion) => {
+            const libro =
+              await transaccion.libro.update({
+                where: {
+                  id: libroExistente.id,
+                },
+
+                data: {
+                  titulo: titulo.trim(),
+                  autor: autor.trim(),
+                  editorial: editorial?.trim() || null,
+                  isbn: isbn?.trim() || null,
+                  anoPublicacion: anoPublicacionNumero,
+                  categoriaId: categoria.id,
+                  condicion: condicion as never,
+                  descripcion: descripcion.trim(),
+                  modalidad: modalidad as never,
+
+                  descripcionIntercambio:
+                    modalidad === "INTERCAMBIO"
+                      ? descripcionIntercambio.trim()
+                      : null,
+
+                  ciudad: ciudad.trim(),
+                  estado: estado.trim(),
+                  colonia: colonia?.trim() || null,
+                },
+              });
+
+            if (archivos.length > 0) {
+              await transaccion.imagenLibro.deleteMany({
+                where: {
+                  libroId: libroExistente.id,
+                },
+              });
+
+              await transaccion.imagenLibro.createMany({
+                data: archivos.map((archivo, indice) => ({
+                  libroId: libroExistente.id,
+                  url: `/uploads/libros/${archivo.filename}`,
+                  esPortada: indice === 0,
+                  orden: indice + 1,
+                })),
+              });
+            }
+
+            return libro;
+          },
+        );
+
+      const libroConImagenes =
+        await prisma.libro.findUnique({
+          where: {
+            id: libroActualizado.id,
+          },
+
+          include: incluirDatosLibro,
+        });
+
+      return respuesta.json({
+        mensaje:
+          "Publicación actualizada correctamente.",
+        libro: libroConImagenes,
+      });
+    } catch (error) {
+      console.error(
+        "Error al actualizar libro:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje:
+          "Ocurrió un error interno al actualizar la publicación.",
+      });
+    }
+  },
+);
+
+/**
+ * Eliminar publicación
+ *
+ * Se utiliza borrado lógico:
+ * el registro permanece en la base de datos
+ * y su estatus cambia a ELIMINADO.
+ */
+router.delete(
+  "/:id",
+  requiereAutenticacion,
+  async (
+    peticion: PeticionAutenticada,
+    respuesta,
+  ) => {
+    try {
+      const id = Number(peticion.params.id);
+
+      if (!Number.isInteger(id) || id < 1) {
+        return respuesta.status(400).json({
+          mensaje:
+            "El identificador del libro no es válido.",
         });
       }
 
@@ -390,179 +898,106 @@ router.post(
         });
       }
 
-      const archivos = Array.isArray(peticion.files)
-        ? peticion.files
-        : [];
+      const libro =
+        await prisma.libro.findFirst({
+          where: {
+            id,
+            usuarioId: peticion.usuario.id,
+            estatus: {
+              not: "ELIMINADO" as never,
+            },
+          },
 
-      if (archivos.length === 0) {
-        return respuesta.status(400).json({
-          mensaje: "Debes agregar al menos una imagen.",
+          select: {
+            id: true,
+          },
+        });
+
+      if (!libro) {
+        return respuesta.status(404).json({
+          mensaje:
+            "No se encontró la publicación o no tienes permiso para eliminarla.",
         });
       }
 
-      if (archivos.length > 6) {
-        return respuesta.status(400).json({
-          mensaje: "Puedes agregar como máximo 6 imágenes.",
-        });
-      }
-
-      const libroNuevo = await prisma.libro.create({
-        data: {
-          titulo: titulo.trim(),
-          autor: autor.trim(),
-          editorial: editorial?.trim() || null,
-          isbn: isbn?.trim() || null,
-          anoPublicacion: anoPublicacionNumero,
-          categoriaId: categoria.id,
-          condicion: condicion as never,
-          descripcion: descripcion.trim(),
-          modalidad: modalidad as never,
-          descripcionIntercambio:
-            modalidad === "INTERCAMBIO"
-              ? descripcionIntercambio.trim()
-              : null,
-          ciudad: ciudad.trim(),
-          estado: estado.trim(),
-          colonia: colonia?.trim() || null,
-          usuarioId: peticion.usuario.id,
-        },
-      });
-
-      await prisma.imagenLibro.createMany({
-        data: archivos.map((archivo, indice) => ({
-          libroId: libroNuevo.id,
-          url: `/uploads/libros/${archivo.filename}`,
-          esPortada: indice === 0,
-          orden: indice + 1,
-        })),
-      });
-
-      const libroConImagenes = await prisma.libro.findUnique({
+      await prisma.libro.update({
         where: {
-          id: libroNuevo.id,
+          id: libro.id,
         },
-        include: {
-          categoria: {
-            select: {
-              id: true,
-              nombre: true,
-              icono: true,
-            },
-          },
-          usuario: {
-            select: {
-              id: true,
-              nombre: true,
-              ciudad: true,
-              estado: true,
-              foto: true,
-            },
-          },
-          imagenes: {
-            orderBy: {
-              orden: "asc",
-            },
-            select: {
-              id: true,
-              url: true,
-              esPortada: true,
-              orden: true,
-            },
-          },
+
+        data: {
+          estatus: "ELIMINADO" as never,
         },
       });
 
-      return respuesta.status(201).json({
-        mensaje: "Libro publicado correctamente.",
-        libro: libroConImagenes,
+      return respuesta.json({
+        mensaje:
+          "La publicación fue eliminada correctamente.",
       });
     } catch (error) {
-      console.error("Error al publicar libro:", error);
+      console.error(
+        "Error al eliminar libro:",
+        error,
+      );
 
       return respuesta.status(500).json({
         mensaje:
-          "Ocurrió un error interno al publicar el libro.",
+          "Ocurrió un error interno al eliminar la publicación.",
       });
     }
   },
 );
 
-/*
-|--------------------------------------------------------------------------
-| GET /api/libros/:id
-|--------------------------------------------------------------------------
-| Obtiene el detalle público de un libro.
-*/
-router.get("/:id", async (peticion, respuesta) => {
-  try {
-    const id = Number(peticion.params.id);
+/**
+ * Obtener detalle de un libro
+ */
+router.get(
+  "/:id",
+  async (peticion, respuesta) => {
+    try {
+      const id = Number(peticion.params.id);
 
-    if (!Number.isInteger(id) || id < 1) {
-      return respuesta.status(400).json({
-        mensaje: "El identificador del libro no es válido.",
+      if (!Number.isInteger(id) || id < 1) {
+        return respuesta.status(400).json({
+          mensaje:
+            "El identificador del libro no es válido.",
+        });
+      }
+
+      const libro =
+        await prisma.libro.findFirst({
+          where: {
+            id,
+            estatus: {
+              not: "ELIMINADO" as never,
+            },
+          },
+
+          include: incluirDatosLibro,
+        });
+
+      if (!libro) {
+        return respuesta.status(404).json({
+          mensaje:
+            "No se encontró el libro solicitado.",
+        });
+      }
+
+      return respuesta.json({
+        libro,
+      });
+    } catch (error) {
+      console.error(
+        "Error al obtener el detalle del libro:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje:
+          "Ocurrió un error al obtener el detalle del libro.",
       });
     }
-
-    const libro = await prisma.libro.findFirst({
-      where: {
-        id,
-        estatus: {
-          not: "ELIMINADO" as never,
-        },
-      },
-      include: {
-        categoria: {
-          select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-            icono: true,
-          },
-        },
-        usuario: {
-          select: {
-            id: true,
-            nombre: true,
-            ciudad: true,
-            estado: true,
-            foto: true,
-            descripcion: true,
-          },
-        },
-        imagenes: {
-          orderBy: {
-            orden: "asc",
-          },
-          select: {
-            id: true,
-            url: true,
-            esPortada: true,
-            orden: true,
-          },
-        },
-      },
-    });
-
-    if (!libro) {
-      return respuesta.status(404).json({
-        mensaje: "No se encontró el libro solicitado.",
-      });
-    }
-
-    return respuesta.json({
-      libro,
-    });
-  } catch (error) {
-    console.error(
-      "Error al obtener el detalle del libro:",
-      error,
-    );
-
-    return respuesta.status(500).json({
-      mensaje:
-        "Ocurrió un error al obtener el detalle del libro.",
-    });
-  }
-});
+  },
+);
 
 export default router;

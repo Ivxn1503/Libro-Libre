@@ -59,6 +59,8 @@ const tiposImagenPermitidos = [
 
 const tamanoMaximoFoto = 5 * 1024 * 1024;
 
+type CampoDuplicado = "correo" | "telefono" | null;
+
 function RegistroPagina() {
   const navigate = useNavigate();
 
@@ -76,6 +78,7 @@ function RegistroPagina() {
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+  const [campoDuplicado, setCampoDuplicado] = useState<CampoDuplicado>(null);
   const [mensaje, setMensaje] = useState("");
   const [estaEnviando, setEstaEnviando] = useState(false);
 
@@ -90,6 +93,11 @@ function RegistroPagina() {
   const limpiarFoto = () => {
     setFoto(null);
     setVistaPreviaFoto(null);
+  };
+
+  const limpiarCampoDuplicado = () => {
+    setCampoDuplicado(null);
+    setMensaje("");
   };
 
   const manejarFoto = (evento: ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +137,7 @@ function RegistroPagina() {
     setConfirmarContrasena("");
     setAceptaTerminos(false);
     setAceptaPrivacidad(false);
+    setCampoDuplicado(null);
   };
 
   const manejarEnvio = async (evento: FormEvent<HTMLFormElement>) => {
@@ -196,10 +205,27 @@ function RegistroPagina() {
         },
       );
 
-      const datos = await respuesta.json();
+      const datos = (await respuesta.json()) as {
+        mensaje?: string;
+      };
 
       if (!respuesta.ok) {
-        setMensaje(datos.mensaje ?? "No fue posible crear la cuenta.");
+        const mensajeApi =
+          datos.mensaje ?? "No fue posible crear la cuenta.";
+        const mensajeNormalizado = mensajeApi.toLowerCase();
+
+        if (mensajeNormalizado.includes("correo")) {
+          setCampoDuplicado("correo");
+        } else if (
+          mensajeNormalizado.includes("teléfono") ||
+          mensajeNormalizado.includes("telefono")
+        ) {
+          setCampoDuplicado("telefono");
+        } else {
+          setCampoDuplicado(null);
+        }
+
+        setMensaje(mensajeApi);
         return;
       }
 
@@ -295,38 +321,86 @@ function RegistroPagina() {
 
               <label>
                 Correo electrónico *
-                <span className="input-wrapper">
+                <span
+                  className={`input-wrapper ${
+                    campoDuplicado === "correo"
+                      ? "campo-duplicado"
+                      : ""
+                  }`}
+                >
                   <Mail size={19} />
                   <input
                     type="email"
                     placeholder="tu.correo@ejemplo.com"
                     value={correo}
-                    onChange={(evento) => setCorreo(evento.target.value)}
+                    onChange={(evento) => {
+                      setCorreo(evento.target.value);
+                      limpiarCampoDuplicado();
+                    }}
                     autoComplete="email"
                     required
+                    aria-invalid={campoDuplicado === "correo"}
+                    aria-describedby={
+                      campoDuplicado === "correo"
+                        ? "correo-duplicado"
+                        : undefined
+                    }
                   />
                 </span>
+                {campoDuplicado === "correo" && (
+                  <small
+                    id="correo-duplicado"
+                    className="campo-duplicado-mensaje"
+                    role="alert"
+                  >
+                    Este correo ya está registrado. Usa otro correo.
+                  </small>
+                )}
               </label>
             </div>
 
             <div className="two-columns">
               <label>
                 Teléfono *
-                <span className="input-wrapper">
+                <span
+                  className={`input-wrapper ${
+                    campoDuplicado === "telefono"
+                      ? "campo-duplicado"
+                      : ""
+                  }`}
+                >
                   <Phone size={19} />
                   <input
                     type="tel"
                     placeholder="10 dígitos"
                     value={telefono}
-                    onChange={(evento) => setTelefono(evento.target.value)}
+                    onChange={(evento) => {
+                      setTelefono(evento.target.value);
+                      limpiarCampoDuplicado();
+                    }}
                     autoComplete="tel"
                     maxLength={14}
                     required
+                    aria-invalid={campoDuplicado === "telefono"}
+                    aria-describedby={
+                      campoDuplicado === "telefono"
+                        ? "telefono-duplicado"
+                        : undefined
+                    }
                   />
                 </span>
                 <small>
                   Se utilizará para facilitar el contacto por WhatsApp.
                 </small>
+                {campoDuplicado === "telefono" && (
+                  <small
+                    id="telefono-duplicado"
+                    className="campo-duplicado-mensaje"
+                    role="alert"
+                  >
+                    Este teléfono ya está registrado. Usa otro teléfono.
+                  </small>
+                )}
               </label>
 
               <label>

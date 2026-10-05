@@ -37,6 +37,27 @@ type RespuestaApi = {
   };
 };
 
+type EstadoApi = {
+  nombre: string;
+};
+
+type CiudadApi = {
+  nombre: string;
+  municipios?: string[];
+};
+
+type RespuestaEstados = {
+  estados?: EstadoApi[];
+  mensaje?: string;
+};
+
+type RespuestaCiudades = {
+  estado?: string;
+  ciudades?: CiudadApi[];
+  mensaje?: string;
+};
+
+const URL_API = "http://localhost:3000";
 const MAXIMO_IMAGENES = 6;
 const MAXIMO_TAMANO_IMAGEN = 5 * 1024 * 1024;
 const TIPOS_IMAGEN_PERMITIDOS = [
@@ -70,41 +91,6 @@ const condiciones = [
   { valor: "DANADO", nombre: "Dañado" },
 ];
 
-const estadosMexico = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Coahuila de Zaragoza",
-  "Colima",
-  "Ciudad de México",
-  "Durango",
-  "Estado de México",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "Michoacán de Ocampo",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz de Ignacio de la Llave",
-  "Yucatán",
-  "Zacatecas",
-];
-
 const formularioInicial: FormularioLibro = {
   titulo: "",
   autor: "",
@@ -126,17 +112,108 @@ function PublicarLibroPag() {
   const navegar = useNavigate();
   const entradaImagenesRef = useRef<HTMLInputElement>(null);
 
-  const [formulario, setFormulario] = useState<FormularioLibro>(
-    formularioInicial,
-  );
+  const [formulario, setFormulario] =
+    useState<FormularioLibro>(formularioInicial);
+  const [estadosMexico, setEstadosMexico] =
+    useState<EstadoApi[]>([]);
+  const [ciudadesDisponibles, setCiudadesDisponibles] =
+    useState<CiudadApi[]>([]);
+  const [cargandoEstados, setCargandoEstados] =
+    useState(true);
+  const [cargandoCiudades, setCargandoCiudades] =
+    useState(false);
   const [mensaje, setMensaje] = useState("");
   const [mensajeImagenes, setMensajeImagenes] = useState("");
   const [esError, setEsError] = useState(false);
   const [estaEnviando, setEstaEnviando] = useState(false);
-  const [vistasPreviasImagenes, setVistasPreviasImagenes] = useState<
-    string[]
-  >([]);
-  const [mostrarAyudaIsbn, setMostrarAyudaIsbn] = useState(false);
+  const [vistasPreviasImagenes, setVistasPreviasImagenes] =
+    useState<string[]>([]);
+  const [mostrarAyudaIsbn, setMostrarAyudaIsbn] =
+    useState(false);
+
+  useEffect(() => {
+    const cargarEstados = async () => {
+      try {
+        setCargandoEstados(true);
+
+        const respuesta = await fetch(
+          `${URL_API}/api/ubicaciones/estados`,
+        );
+
+        const datos =
+          (await respuesta.json()) as RespuestaEstados;
+
+        if (!respuesta.ok) {
+          throw new Error(
+            datos.mensaje ??
+              "No se pudieron cargar los estados.",
+          );
+        }
+
+        setEstadosMexico(datos.estados ?? []);
+      } catch (error) {
+        console.error(
+          "Error al cargar estados:",
+          error,
+        );
+
+        setEsError(true);
+        setMensaje(
+          "No se pudieron cargar los estados. Verifica que la API esté ejecutándose.",
+        );
+      } finally {
+        setCargandoEstados(false);
+      }
+    };
+
+    cargarEstados();
+  }, []);
+
+  useEffect(() => {
+    if (!formulario.estado) {
+      setCiudadesDisponibles([]);
+      return;
+    }
+
+    const cargarCiudades = async () => {
+      try {
+        setCargandoCiudades(true);
+        setCiudadesDisponibles([]);
+
+        const respuesta = await fetch(
+          `${URL_API}/api/ubicaciones/estados/${encodeURIComponent(
+            formulario.estado,
+          )}/ciudades`,
+        );
+
+        const datos =
+          (await respuesta.json()) as RespuestaCiudades;
+
+        if (!respuesta.ok) {
+          throw new Error(
+            datos.mensaje ??
+              "No se pudieron cargar las ciudades.",
+          );
+        }
+
+        setCiudadesDisponibles(datos.ciudades ?? []);
+      } catch (error) {
+        console.error(
+          "Error al cargar ciudades:",
+          error,
+        );
+
+        setEsError(true);
+        setMensaje(
+          "No se pudieron cargar las ciudades del estado seleccionado.",
+        );
+      } finally {
+        setCargandoCiudades(false);
+      }
+    };
+
+    cargarCiudades();
+  }, [formulario.estado]);
 
   useEffect(() => {
     return () => {
@@ -153,6 +230,16 @@ function PublicarLibroPag() {
     setFormulario((formularioAnterior) => ({
       ...formularioAnterior,
       [campo]: valor,
+    }));
+  };
+
+  const manejarCambioEstado = (
+    evento: ChangeEvent<HTMLSelectElement>,
+  ) => {
+    setFormulario((formularioAnterior) => ({
+      ...formularioAnterior,
+      estado: evento.target.value,
+      ciudad: "",
     }));
   };
 
@@ -236,8 +323,8 @@ function PublicarLibroPag() {
 
     actualizarCampo(
       "imagenes",
-      formulario.imagenes.filter((_, indiceActual) =>
-        indiceActual !== indice,
+      formulario.imagenes.filter(
+        (_, indiceActual) => indiceActual !== indice,
       ),
     );
 
@@ -268,19 +355,29 @@ function PublicarLibroPag() {
     setMensaje("");
     setEsError(false);
 
+    const estadoValido = estadosMexico.some(
+      (estado) => estado.nombre === formulario.estado,
+    );
+
+    const ciudadValida = ciudadesDisponibles.some(
+      (ciudad) => ciudad.nombre === formulario.ciudad,
+    );
+
     if (
       !formulario.titulo.trim() ||
       !formulario.autor.trim() ||
       !formulario.categoriaId ||
       !formulario.condicion ||
       !formulario.descripcion.trim() ||
-      !formulario.ciudad.trim() ||
       !formulario.estado ||
+      !formulario.ciudad ||
+      !estadoValido ||
+      !ciudadValida ||
       formulario.imagenes.length === 0
     ) {
       setEsError(true);
       setMensaje(
-        "Completa los campos obligatorios y agrega al menos una imagen.",
+        "Selecciona un estado y una ciudad válidos, completa los campos obligatorios y agrega al menos una imagen.",
       );
       return;
     }
@@ -350,7 +447,7 @@ function PublicarLibroPag() {
         ? formulario.descripcionIntercambio.trim()
         : "",
     );
-    datosFormulario.append("ciudad", formulario.ciudad.trim());
+    datosFormulario.append("ciudad", formulario.ciudad);
     datosFormulario.append("estado", formulario.estado);
     datosFormulario.append("colonia", formulario.colonia.trim());
 
@@ -362,7 +459,7 @@ function PublicarLibroPag() {
       setEstaEnviando(true);
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/libros",
+        `${URL_API}/api/libros`,
         {
           method: "POST",
           headers: {
@@ -392,6 +489,7 @@ function PublicarLibroPag() {
       });
 
       setFormulario(formularioInicial);
+      setCiudadesDisponibles([]);
       setVistasPreviasImagenes([]);
       setMensajeImagenes("");
 
@@ -525,9 +623,8 @@ function PublicarLibroPag() {
                 {mostrarAyudaIsbn && (
                   <span className="ayuda-isbn" role="tooltip">
                     El ISBN es un código único que identifica una
-                    edición específica de un libro. Generalmente
-                    aparece junto al código de barras o en las primeras
-                    páginas. Este campo es opcional.
+                    edición específica de un libro. Este campo es
+                    opcional.
                   </span>
                 )}
 
@@ -623,10 +720,7 @@ function PublicarLibroPag() {
                   placeholder="Describe el estado y las características del libro."
                   value={formulario.descripcion}
                   onChange={(evento) =>
-                    actualizarCampo(
-                      "descripcion",
-                      evento.target.value,
-                    )
+                    actualizarCampo("descripcion", evento.target.value)
                   }
                   rows={4}
                 />
@@ -757,34 +851,55 @@ function PublicarLibroPag() {
 
             <div className="two-columns">
               <label>
-                Ciudad *
-                <span className="input-wrapper">
-                  <input
-                    type="text"
-                    placeholder="Ej. Guadalajara"
-                    value={formulario.ciudad}
-                    onChange={(evento) =>
-                      actualizarCampo("ciudad", evento.target.value)
-                    }
-                  />
-                </span>
-              </label>
-
-              <label>
                 Estado *
                 <span className="input-wrapper">
                   <select
                     value={formulario.estado}
+                    onChange={manejarCambioEstado}
+                    disabled={cargandoEstados}
+                  >
+                    <option value="">
+                      {cargandoEstados
+                        ? "Cargando estados..."
+                        : "Selecciona tu estado"}
+                    </option>
+                    {estadosMexico.map((estado) => (
+                      <option
+                        key={estado.nombre}
+                        value={estado.nombre}
+                      >
+                        {estado.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              </label>
+
+              <label>
+                Ciudad *
+                <span className="input-wrapper">
+                  <select
+                    value={formulario.ciudad}
                     onChange={(evento) =>
-                      actualizarCampo("estado", evento.target.value)
+                      actualizarCampo("ciudad", evento.target.value)
+                    }
+                    disabled={
+                      !formulario.estado || cargandoCiudades
                     }
                   >
                     <option value="">
-                      Selecciona tu estado
+                      {cargandoCiudades
+                        ? "Cargando ciudades..."
+                        : formulario.estado
+                          ? "Selecciona tu ciudad"
+                          : "Primero selecciona un estado"}
                     </option>
-                    {estadosMexico.map((estado) => (
-                      <option key={estado} value={estado}>
-                        {estado}
+                    {ciudadesDisponibles.map((ciudad) => (
+                      <option
+                        key={ciudad.nombre}
+                        value={ciudad.nombre}
+                      >
+                        {ciudad.nombre}
                       </option>
                     ))}
                   </select>
@@ -819,7 +934,11 @@ function PublicarLibroPag() {
             <button
               type="submit"
               className="button button-primary auth-submit"
-              disabled={estaEnviando}
+              disabled={
+                estaEnviando ||
+                cargandoEstados ||
+                cargandoCiudades
+              }
             >
               <Send size={18} />
               {estaEnviando

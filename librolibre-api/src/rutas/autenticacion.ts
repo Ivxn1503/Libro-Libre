@@ -2,8 +2,13 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  enviarAvisoContrasenaCambiada,
+  enviarEnlaceRecuperacion,
+} from "../servicios/correo.js";
 
 import prisma from "../prisma.js";
 
@@ -32,7 +37,8 @@ const almacenamientoFoto = multer.diskStorage({
     callback(null, carpetaPerfiles);
   },
   filename: (_peticion, archivo, callback) => {
-    const extension = path.extname(archivo.originalname).toLowerCase() || ".jpg";
+    const extension =
+      path.extname(archivo.originalname).toLowerCase() || ".jpg";
 
     const nombreArchivo = `perfil-${Date.now()}-${Math.round(
       Math.random() * 1e9,
@@ -62,6 +68,20 @@ const subirFoto = multer({
     callback(new Error("La foto debe ser JPG, PNG o WebP."));
   },
 });
+
+const seleccionarUsuario = {
+  id: true,
+  nombre: true,
+  correo: true,
+  telefono: true,
+  foto: true,
+  ciudad: true,
+  estado: true,
+  descripcion: true,
+  rol: true,
+  estatus: true,
+  creadoEn: true,
+};
 
 router.post(
   "/registro",
@@ -107,15 +127,28 @@ router.post(
 
       const correoNormalizado = correo.trim().toLowerCase();
 
-      const usuarioExistente = await prisma.usuario.findUnique({
+      const usuarioExistente = await prisma.usuario.findFirst({
         where: {
-          correo: correoNormalizado,
+          OR: [
+            { correo: correoNormalizado },
+            { telefono: telefonoLimpio },
+          ],
+        },
+        select: {
+          correo: true,
+          telefono: true,
         },
       });
 
       if (usuarioExistente) {
+        if (usuarioExistente.correo === correoNormalizado) {
+          return respuesta.status(409).json({
+            mensaje: "Ya existe una cuenta registrada con este correo.",
+          });
+        }
+
         return respuesta.status(409).json({
-          mensaje: "Ya existe una cuenta registrada con este correo.",
+          mensaje: "Ya existe una cuenta registrada con este teléfono.",
         });
       }
 
@@ -135,19 +168,7 @@ router.post(
           foto: fotoUrl,
           contrasenaHash,
         },
-        select: {
-          id: true,
-          nombre: true,
-          correo: true,
-          telefono: true,
-          foto: true,
-          ciudad: true,
-          estado: true,
-          descripcion: true,
-          rol: true,
-          estatus: true,
-          creadoEn: true,
-        },
+        select: seleccionarUsuario,
       });
 
       return respuesta.status(201).json({
@@ -156,28 +177,7 @@ router.post(
       });
     } catch (error) {
       console.error("Error al registrar usuario:", error);
-
-      if (error instanceof multer.MulterError) {
-        if (error.code === "LIMIT_FILE_SIZE") {
-          return respuesta.status(400).json({
-            mensaje: "La foto no puede superar los 5 MB.",
-          });
-        }
-
-        return respuesta.status(400).json({
-          mensaje: "No fue posible procesar la foto.",
-        });
-      }
-
-      if (error instanceof Error && error.message.includes("La foto")) {
-        return respuesta.status(400).json({
-          mensaje: error.message,
-        });
-      }
-
-      return respuesta.status(500).json({
-        mensaje: "Ocurrió un error interno al registrar el usuario.",
-      });
+      return responderError(error, respuesta);
     }
   },
 );
@@ -259,5 +259,209 @@ router.post("/login", async (peticion, respuesta) => {
     });
   }
 });
+
+router.post(
+  "/solicitar-recuperacion",
+  async (peticion, respuesta) => {
+    try {
+      const correo = peticion.body.correo
+        ?.trim()
+        .toLowerCase();
+
+      const mensajeGenerico =
+        "Si existe una cuenta con ese correo, recibirás instrucciones para recuperar tu contraseña.";
+
+      if (!correo) {
+        return respuesta.status(400).json({
+          mensaje: "El correo es obligatorio.",
+        });
+      }
+
+      const usuario = await prisma.usuario.findUnique({
+        where: {
+          correo,
+        },
+      });
+
+      if (!usuario) {
+        return respuesta.status(200).json({
+          mensaje: mensajeGenerico,
+        });
+      }
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+      const expiraEn = new Date(
+        Date.now() + 15 * 60 * 1000,
+      );
+
+      await prisma.usuario.update({
+        where: {
+          id: usuario.id,
+        },
+        data: {
+          tokenRecuperacionHash: tokenHash,
+          tokenRecuperacionExpiraEn: expiraEn,
+        },
+      });
+
+      await enviarEnlaceRecuperacion({
+        correo: usuario.correo,
+        nombre: usuario.nombre,
+        token,
+      });
+
+      return respuesta.status(200).json({
+        mensaje: mensajeGenerico,
+      });
+    } catch (error) {
+      console.error(
+        "Error al solicitar recuperación:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje: "No fue posible procesar la solicitud.",
+      });
+    }
+  },
+);
+
+router.post(
+  "/restablecer-contrasena",
+  async (peticion, respuesta) => {
+    try {
+      const {
+        token,
+        contrasena,
+        confirmarContrasena,
+      } = peticion.body;
+
+      if (
+        !token ||
+        !contrasena ||
+        !confirmarContrasena
+      ) {
+        return respuesta.status(400).json({
+          mensaje: "Completa todos los campos.",
+        });
+      }
+
+      if (contrasena.length < 6) {
+        return respuesta.status(400).json({
+          mensaje:
+            "La contraseña debe tener al menos 6 caracteres.",
+        });
+      }
+
+      if (contrasena !== confirmarContrasena) {
+        return respuesta.status(400).json({
+          mensaje: "Las contraseñas no coinciden.",
+        });
+      }
+
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+      const usuario = await prisma.usuario.findFirst({
+        where: {
+          tokenRecuperacionHash: tokenHash,
+          tokenRecuperacionExpiraEn: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      if (!usuario) {
+        return respuesta.status(400).json({
+          mensaje: "El enlace no es válido o ya expiró.",
+        });
+      }
+
+      const contrasenaHash = await bcrypt.hash(
+        contrasena,
+        10,
+      );
+
+      await prisma.usuario.update({
+        where: {
+          id: usuario.id,
+        },
+        data: {
+          contrasenaHash,
+          tokenRecuperacionHash: null,
+          tokenRecuperacionExpiraEn: null,
+        },
+      });
+
+      try {
+        await enviarAvisoContrasenaCambiada({
+          correo: usuario.correo,
+          nombre: usuario.nombre,
+        });
+      } catch (error) {
+        console.error(
+          "La contraseña cambió, pero no se pudo enviar el correo de aviso:",
+          error,
+        );
+      }
+
+      return respuesta.status(200).json({
+        mensaje:
+          "Contraseña actualizada correctamente. Inicia sesión nuevamente.",
+      });
+    } catch (error) {
+      console.error(
+        "Error al restablecer contraseña:",
+        error,
+      );
+
+      return respuesta.status(500).json({
+        mensaje: "No fue posible restablecer la contraseña.",
+      });
+    }
+  },
+);
+
+function responderError(error: unknown, respuesta: any) {
+  if (error instanceof multer.MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return respuesta.status(400).json({
+        mensaje: "La foto no puede superar los 5 MB.",
+      });
+    }
+
+    return respuesta.status(400).json({
+      mensaje: "No fue posible procesar la foto.",
+    });
+  }
+
+  if (error instanceof Error && error.message.includes("La foto")) {
+    return respuesta.status(400).json({
+      mensaje: error.message,
+    });
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "P2002"
+  ) {
+    return respuesta.status(409).json({
+      mensaje: "El correo o teléfono ya está registrado.",
+    });
+  }
+
+  return respuesta.status(500).json({
+    mensaje: "Ocurrió un error interno al procesar la solicitud.",
+  });
+}
 
 export default router;

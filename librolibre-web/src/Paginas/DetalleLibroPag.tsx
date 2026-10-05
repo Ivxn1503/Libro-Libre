@@ -30,17 +30,24 @@ type LibroDetalle = {
   ciudad: string;
   estado: string;
   colonia: string | null;
-  estatus: "DISPONIBLE" | "RESERVADO" | "ENTREGADO" | string;
+  estatus:
+    | "DISPONIBLE"
+    | "RESERVADO"
+    | "ENTREGADO"
+    | string;
   imagenes: ImagenLibro[];
+
   categoria?: {
     id: number;
     nombre: string;
     descripcion?: string | null;
     icono?: string | null;
   } | null;
+
   usuario?: {
     id: number;
     nombre: string;
+    telefono?: string | null;
     ciudad?: string | null;
     estado?: string | null;
     foto?: string | null;
@@ -53,21 +60,63 @@ type RespuestaApi = {
   mensaje?: string;
 };
 
+type UsuarioGuardado = {
+  id?: number;
+};
+
 const URL_API = "http://localhost:3000";
 
 function DetalleLibroPag() {
   const navegar = useNavigate();
   const { id } = useParams<{ id: string }>();
 
-  const [libro, setLibro] = useState<LibroDetalle | null>(null);
-  const [indiceImagen, setIndiceImagen] = useState(0);
-  const [estaCargando, setEstaCargando] = useState(true);
-  const [mensajeError, setMensajeError] = useState("");
+  const [libro, setLibro] =
+    useState<LibroDetalle | null>(null);
+
+  const [indiceImagen, setIndiceImagen] =
+    useState(0);
+
+  const [estaCargando, setEstaCargando] =
+    useState(true);
+
+  const [mensajeError, setMensajeError] =
+    useState("");
+
+  const obtenerIdUsuarioActual = (): number | null => {
+    const usuarioGuardado =
+      localStorage.getItem("usuario");
+
+    if (!usuarioGuardado) {
+      return null;
+    }
+
+    try {
+      const usuario = JSON.parse(
+        usuarioGuardado,
+      ) as UsuarioGuardado;
+
+      if (
+        typeof usuario.id !== "number" ||
+        !Number.isInteger(usuario.id)
+      ) {
+        return null;
+      }
+
+      return usuario.id;
+    } catch {
+      return null;
+    }
+  };
+
+  const idUsuarioActual =
+    obtenerIdUsuarioActual();
 
   useEffect(() => {
     const cargarLibro = async () => {
       if (!id) {
-        setMensajeError("El identificador del libro no es válido.");
+        setMensajeError(
+          "El identificador del libro no es válido.",
+        );
         setEstaCargando(false);
         return;
       }
@@ -79,18 +128,25 @@ function DetalleLibroPag() {
         const respuesta = await fetch(
           `${URL_API}/api/libros/${id}`,
         );
-        const datos = (await respuesta.json()) as RespuestaApi;
+
+        const datos =
+          (await respuesta.json()) as RespuestaApi;
 
         if (!respuesta.ok || !datos.libro) {
           throw new Error(
-            datos.mensaje ?? "No se encontró el libro.",
+            datos.mensaje ??
+              "No se encontró el libro.",
           );
         }
 
         setLibro(datos.libro);
         setIndiceImagen(0);
       } catch (error) {
-        console.error("Error al cargar el detalle:", error);
+        console.error(
+          "Error al cargar el detalle:",
+          error,
+        );
+
         setMensajeError(
           error instanceof Error
             ? error.message
@@ -106,17 +162,53 @@ function DetalleLibroPag() {
 
   const imagenesOrdenadas = useMemo(() => {
     return [...(libro?.imagenes ?? [])].sort(
-      (imagenA, imagenB) => imagenA.orden - imagenB.orden,
+      (imagenA, imagenB) =>
+        imagenA.orden - imagenB.orden,
     );
   }, [libro]);
 
-  const imagenActual = imagenesOrdenadas[indiceImagen];
+  const imagenActual =
+    imagenesOrdenadas[indiceImagen];
+
+  const esLibroPropio =
+    idUsuarioActual !== null &&
+    libro?.usuario?.id === idUsuarioActual;
 
   const obtenerUrlImagen = (url: string) => {
-    return url.startsWith("http") ? url : `${URL_API}${url}`;
+    if (
+      url.startsWith("http://") ||
+      url.startsWith("https://")
+    ) {
+      return url;
+    }
+
+    return `${URL_API}${
+      url.startsWith("/") ? url : `/${url}`
+    }`;
   };
 
-  const obtenerNombreCondicion = (condicion: string) => {
+  const obtenerUrlFotoUsuario = (
+    foto: string | null | undefined,
+  ) => {
+    if (!foto) {
+      return "/avatar-default.png";
+    }
+
+    if (
+      foto.startsWith("http://") ||
+      foto.startsWith("https://")
+    ) {
+      return foto;
+    }
+
+    return `${URL_API}${
+      foto.startsWith("/") ? foto : `/${foto}`
+    }`;
+  };
+
+  const obtenerNombreCondicion = (
+    condicion: string,
+  ) => {
     const nombres: Record<string, string> = {
       COMO_NUEVO: "Como nuevo",
       MUY_BUEN_ESTADO: "Muy buen estado",
@@ -128,7 +220,9 @@ function DetalleLibroPag() {
     return nombres[condicion] ?? condicion;
   };
 
-  const obtenerNombreEstatus = (estatus: string) => {
+  const obtenerNombreEstatus = (
+    estatus: string,
+  ) => {
     const nombres: Record<string, string> = {
       DISPONIBLE: "Disponible",
       RESERVADO: "Reservado",
@@ -138,13 +232,34 @@ function DetalleLibroPag() {
     return nombres[estatus] ?? estatus;
   };
 
-  const contactar = () => {
-    navegar("/iniciar-sesion", {
-      state: {
-        desde: `/libros/${id}`,
-      },
-    });
+  const obtenerUrlWhatsApp = () => {
+    if (
+      esLibroPropio ||
+      !libro?.usuario?.telefono
+    ) {
+      return null;
+    }
+
+    const telefono =
+      libro.usuario.telefono.replace(/\D/g, "");
+
+    if (!telefono) {
+      return null;
+    }
+
+    const numeroWhatsApp =
+      telefono.startsWith("52")
+        ? telefono
+        : `52${telefono}`;
+
+    const mensaje = encodeURIComponent(
+      `Hola, vi tu publicación de "${libro.titulo}" en LibroLibre y me interesa. ¿Sigue disponible?`,
+    );
+
+    return `https://wa.me/${numeroWhatsApp}?text=${mensaje}`;
   };
+
+  const urlWhatsApp = obtenerUrlWhatsApp();
 
   if (estaCargando) {
     return (
@@ -160,7 +275,11 @@ function DetalleLibroPag() {
     return (
       <main className="detalle-pagina">
         <div className="detalle-mensaje detalle-mensaje-error">
-          <p>{mensajeError || "No se encontró el libro."}</p>
+          <p>
+            {mensajeError ||
+              "No se encontró el libro."}
+          </p>
+
           <button
             className="boton primario"
             type="button"
@@ -199,8 +318,12 @@ function DetalleLibroPag() {
           <div className="detalle-imagen-principal">
             {imagenActual ? (
               <img
-                src={obtenerUrlImagen(imagenActual.url)}
-                alt={`Imagen ${indiceImagen + 1} de ${libro.titulo}`}
+                src={obtenerUrlImagen(
+                  imagenActual.url,
+                )}
+                alt={`Imagen ${
+                  indiceImagen + 1
+                } de ${libro.titulo}`}
               />
             ) : (
               <div className="detalle-sin-imagen">
@@ -212,21 +335,31 @@ function DetalleLibroPag() {
 
           {imagenesOrdenadas.length > 1 && (
             <div className="detalle-miniaturas">
-              {imagenesOrdenadas.map((imagen, indice) => (
-                <button
-                  className={`detalle-miniatura ${
-                    indice === indiceImagen ? "seleccionada" : ""
-                  }`}
-                  type="button"
-                  key={imagen.id}
-                  onClick={() => setIndiceImagen(indice)}
-                >
-                  <img
-                    src={obtenerUrlImagen(imagen.url)}
-                    alt={`Miniatura ${indice + 1}`}
-                  />
-                </button>
-              ))}
+              {imagenesOrdenadas.map(
+                (imagen, indice) => (
+                  <button
+                    className={`detalle-miniatura ${
+                      indice === indiceImagen
+                        ? "seleccionada"
+                        : ""
+                    }`}
+                    type="button"
+                    key={imagen.id}
+                    onClick={() =>
+                      setIndiceImagen(indice)
+                    }
+                  >
+                    <img
+                      src={obtenerUrlImagen(
+                        imagen.url,
+                      )}
+                      alt={`Miniatura ${
+                        indice + 1
+                      }`}
+                    />
+                  </button>
+                ),
+              )}
             </div>
           )}
         </div>
@@ -249,6 +382,7 @@ function DetalleLibroPag() {
               ) : (
                 <Repeat2 size={15} />
               )}
+
               {libro.modalidad === "REGALO"
                 ? "Regalo"
                 : "Intercambio"}
@@ -256,39 +390,55 @@ function DetalleLibroPag() {
           </div>
 
           <h1>{libro.titulo}</h1>
-          <p className="detalle-autor">{libro.autor}</p>
+
+          <p className="detalle-autor">
+            {libro.autor}
+          </p>
 
           <div className="detalle-estado">
             <span>Estado de publicación</span>
+
             <strong>
-              {obtenerNombreEstatus(libro.estatus)}
+              {obtenerNombreEstatus(
+                libro.estatus,
+              )}
             </strong>
           </div>
 
           <div className="detalle-datos">
             <div>
               <span>Condición</span>
+
               <strong>
-                {obtenerNombreCondicion(libro.condicion)}
+                {obtenerNombreCondicion(
+                  libro.condicion,
+                )}
               </strong>
             </div>
 
             <div>
               <span>Categoría</span>
-              <strong>{libro.categoria?.nombre ?? "Otros"}</strong>
+
+              <strong>
+                {libro.categoria?.nombre ?? "Otros"}
+              </strong>
             </div>
 
             {libro.editorial && (
               <div>
                 <span>Editorial</span>
-                <strong>{libro.editorial}</strong>
+                <strong>
+                  {libro.editorial}
+                </strong>
               </div>
             )}
 
             {libro.anoPublicacion && (
               <div>
                 <span>Año de publicación</span>
-                <strong>{libro.anoPublicacion}</strong>
+                <strong>
+                  {libro.anoPublicacion}
+                </strong>
               </div>
             )}
 
@@ -302,8 +452,10 @@ function DetalleLibroPag() {
 
           <div className="detalle-ubicacion">
             <MapPin size={18} />
+
             <div>
               <span>Ubicación aproximada</span>
+
               <strong>
                 {libro.ciudad}, {libro.estado}
               </strong>
@@ -319,33 +471,71 @@ function DetalleLibroPag() {
             libro.descripcionIntercambio && (
               <div className="detalle-intercambio">
                 <h2>¿Qué busca a cambio?</h2>
-                <p>{libro.descripcionIntercambio}</p>
+                <p>
+                  {libro.descripcionIntercambio}
+                </p>
               </div>
             )}
 
           <div className="detalle-usuario">
-            <div className="detalle-usuario-icono">
-              {libro.usuario?.nombre?.charAt(0).toUpperCase() ?? "U"}
-            </div>
+            <img
+              src={obtenerUrlFotoUsuario(
+                libro.usuario?.foto,
+              )}
+              alt={`Foto de ${
+                libro.usuario?.nombre ?? "usuario"
+              }`}
+              className="detalle-usuario-foto"
+              onError={(evento) => {
+                evento.currentTarget.src =
+                  "/avatar-default.png";
+              }}
+            />
+
             <div>
               <span>Publicado por</span>
+
               <strong>
-                {libro.usuario?.nombre ?? "Usuario de LibroLibre"}
+                {libro.usuario?.nombre ??
+                  "Usuario de LibroLibre"}
               </strong>
             </div>
           </div>
 
-          <button
-            className="boton primario detalle-contactar"
-            type="button"
-            disabled={libro.estatus !== "DISPONIBLE"}
-            onClick={contactar}
-          >
-            <MessageCircle size={18} />
-            {libro.estatus === "DISPONIBLE"
-              ? "Contactar al propietario"
-              : obtenerNombreEstatus(libro.estatus)}
-          </button>
+          {esLibroPropio ? (
+            <div className="detalle-propietario">
+              Esta publicación pertenece a tu cuenta.
+            </div>
+          ) : libro.estatus === "DISPONIBLE" ? (
+            urlWhatsApp ? (
+              <a
+                className="boton primario detalle-contactar"
+                href={urlWhatsApp}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle size={18} />
+                Contactar por WhatsApp
+              </a>
+            ) : (
+              <p className="form-message-error detalle-contactar-mensaje">
+                El propietario todavía no tiene un
+                teléfono registrado.
+              </p>
+            )
+          ) : (
+            <button
+              className="boton primario detalle-contactar"
+              type="button"
+              disabled
+            >
+              <MessageCircle size={18} />
+
+              {obtenerNombreEstatus(
+                libro.estatus,
+              )}
+            </button>
+          )}
         </div>
       </section>
     </main>

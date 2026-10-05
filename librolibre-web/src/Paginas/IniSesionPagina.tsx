@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -40,7 +39,7 @@ function IniSesionPagina() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            correo: correo.trim(),
+            correo: correo.trim().toLowerCase(),
             contrasena,
           }),
         },
@@ -150,10 +149,9 @@ function IniSesionPagina() {
                   type="email"
                   placeholder="tu.correo@ejemplo.com"
                   value={correo}
-                  onChange={(evento) =>
-                    setCorreo(evento.target.value)
-                  }
+                  onChange={(evento) => setCorreo(evento.target.value)}
                   autoComplete="email"
+                  required
                 />
               </span>
             </label>
@@ -172,6 +170,7 @@ function IniSesionPagina() {
                     setContrasena(evento.target.value)
                   }
                   autoComplete="current-password"
+                  required
                 />
 
                 <button
@@ -195,17 +194,12 @@ function IniSesionPagina() {
               </span>
             </label>
 
-            <button
-              type="button"
+            <Link
               className="forgot-password"
-              onClick={() =>
-                setMensaje(
-                  "La recuperación de contraseña se agregará en el siguiente módulo.",
-                )
-              }
+              to="/recuperar-contrasena"
             >
               ¿Olvidaste tu contraseña?
-            </button>
+            </Link>
 
             {mensaje && <p className="form-message">{mensaje}</p>}
 

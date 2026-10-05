@@ -4,14 +4,11 @@ import cors from "cors";
 import express from "express";
 import path from "node:path";
 
-import {
-  requiereAutenticacion,
-  type PeticionAutenticada,
-} from "./intermedios/autenticacion.js";
-
 import rutasAutenticacion from "./rutas/autenticacion.js";
 import rutasCategorias from "./rutas/categorias.js";
 import rutasLibros from "./rutas/libros.js";
+import rutasPerfil from "./rutas/perfil.js";
+import rutasUbicaciones from "./rutas/ubicaciones.js";
 
 const app = express();
 
@@ -19,6 +16,7 @@ const puerto = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(
   "/uploads",
@@ -29,7 +27,8 @@ app.use(
 
 app.get("/", (_peticion, respuesta) => {
   return respuesta.json({
-    mensaje: "API de LibroLibre funcionando correctamente",
+    mensaje:
+      "API de LibroLibre funcionando correctamente",
     estado: "ok",
   });
 });
@@ -42,22 +41,29 @@ app.get("/api/salud", (_peticion, respuesta) => {
   });
 });
 
-app.use("/api/auth", rutasAutenticacion);
-app.use("/api/categorias", rutasCategorias);
-app.use("/api/libros", rutasLibros);
+app.use(
+  "/api/auth",
+  rutasAutenticacion,
+);
 
-app.get(
+app.use(
   "/api/perfil",
-  requiereAutenticacion,
-  (
-    peticion: PeticionAutenticada,
-    respuesta,
-  ) => {
-    return respuesta.json({
-      mensaje: "Acceso autorizado al perfil.",
-      usuario: peticion.usuario,
-    });
-  },
+  rutasPerfil,
+);
+
+app.use(
+  "/api/categorias",
+  rutasCategorias,
+);
+
+app.use(
+  "/api/ubicaciones",
+  rutasUbicaciones,
+);
+
+app.use(
+  "/api/libros",
+  rutasLibros,
 );
 
 app.listen(puerto, () => {

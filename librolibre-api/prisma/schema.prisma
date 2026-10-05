@@ -39,21 +39,23 @@ enum CondicionLibro {
 }
 
 model Usuario {
-  id             Int           @id @default(autoincrement())
-  nombre         String
-  correo         String        @unique
-  contrasenaHash String
-  telefono       String?
-  foto           String?
-  ciudad         String?
-  estado         String?
-  descripcion    String?
-  rol            RolUsuario    @default(USUARIO)
-  estatus        EstadoUsuario @default(ACTIVO)
-  creadoEn       DateTime      @default(now())
-  actualizadoEn  DateTime      @updatedAt
+  id                         Int           @id @default(autoincrement())
+  nombre                     String
+  correo                     String        @unique
+  contrasenaHash             String
+  telefono                   String?       @unique
+  foto                       String?
+  ciudad                     String?
+  estado                     String?
+  descripcion                String?
+  tokenRecuperacionHash      String?
+  tokenRecuperacionExpiraEn  DateTime?
+  rol                        RolUsuario    @default(USUARIO)
+  estatus                    EstadoUsuario @default(ACTIVO)
+  creadoEn                   DateTime      @default(now())
+  actualizadoEn              DateTime      @updatedAt
 
-  libros         Libro[]
+  libros                     Libro[]
 
   @@map("usuarios")
 }
