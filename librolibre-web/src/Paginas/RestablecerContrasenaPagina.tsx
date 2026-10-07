@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+
+import { URL_API } from "../config";
+
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, BookOpen, Eye, EyeOff, LockKeyhole } from "lucide-react";
 
@@ -38,13 +41,19 @@ function RestablecerContrasenaPagina() {
       setEstaEnviando(true);
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/auth/restablecer-contrasena",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, contrasena, confirmarContrasena }),
-        },
-      );
+  `${URL_API}/api/auth/restablecer-contrasena`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      token,
+      contrasena,
+      confirmarContrasena,
+    }),
+  },
+);
 
       const datos = await respuesta.json();
 

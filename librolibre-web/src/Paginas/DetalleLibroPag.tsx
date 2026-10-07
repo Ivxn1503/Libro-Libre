@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+
+import { URL_API } from "../config";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -64,7 +67,6 @@ type UsuarioGuardado = {
   id?: number;
 };
 
-const URL_API = "http://localhost:3000";
 
 function DetalleLibroPag() {
   const navegar = useNavigate();

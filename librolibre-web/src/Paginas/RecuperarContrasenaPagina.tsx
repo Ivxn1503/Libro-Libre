@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+
+import { URL_API } from "../config";
+
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Mail } from "lucide-react";
 
@@ -24,13 +27,17 @@ function RecuperarContrasenaPagina() {
       setEstaEnviando(true);
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/auth/solicitar-recuperacion",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ correo: correo.trim().toLowerCase() }),
-        },
-      );
+  `${URL_API}/api/auth/solicitar-recuperacion`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      correo: correo.trim().toLowerCase(),
+    }),
+  },
+);
 
       const datos = await respuesta.json();
 

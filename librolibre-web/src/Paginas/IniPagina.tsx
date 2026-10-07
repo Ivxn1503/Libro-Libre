@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { URL_API } from "../config";
+
 import {
   ArrowRight,
   BookOpen,
@@ -50,7 +53,6 @@ type Estadisticas = {
   librosRegalados: number;
 };
 
-const URL_API = "http://localhost:3000";
 const FOTO_POR_DEFECTO = "/avatar-default.png";
 
 const categorias = [

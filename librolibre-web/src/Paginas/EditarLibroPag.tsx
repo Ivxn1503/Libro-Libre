@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import "../Estilos/editarlib.css";
+import { URL_API } from "../config";
 
 import {
   ArrowLeft,
@@ -80,7 +81,6 @@ type RespuestaCiudades = {
   mensaje?: string;
 };
 
-const URL_API = "http://localhost:3000";
 
 function EditarLibroPag() {
   const navegar = useNavigate();

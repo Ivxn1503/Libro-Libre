@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+
+import { URL_API } from "../config";
+
 import type { ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -198,12 +201,12 @@ function RegistroPagina() {
       }
 
       const respuesta = await fetch(
-        "http://localhost:3000/api/auth/registro",
-        {
-          method: "POST",
-          body: datosFormulario,
-        },
-      );
+  `${URL_API}/api/auth/registro`,
+  {
+    method: "POST",
+    body: datosFormulario,
+  },
+);
 
       const datos = (await respuesta.json()) as {
         mensaje?: string;

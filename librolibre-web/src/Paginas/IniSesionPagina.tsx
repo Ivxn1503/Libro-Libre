@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+
+import { URL_API } from "../config";
+
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -31,19 +34,19 @@ function IniSesionPagina() {
     try {
       setEstaEnviando(true);
 
-      const respuesta = await fetch(
-        "http://localhost:3000/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            correo: correo.trim().toLowerCase(),
-            contrasena,
-          }),
-        },
-      );
+     const respuesta = await fetch(
+  `${URL_API}/api/auth/login`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      correo: correo.trim().toLowerCase(),
+      contrasena,
+    }),
+  },
+);
 
       const datos = await respuesta.json();
 

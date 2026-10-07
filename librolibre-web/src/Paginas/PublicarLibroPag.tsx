@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+
+import { URL_API } from "../config";
+
 import type {
   ChangeEvent,
   FormEvent,
@@ -72,7 +75,6 @@ type RespuestaCodigoPostal = {
   colonias?: string[];
 };
 
-const URL_API = "http://localhost:3000";
 const MAXIMO_IMAGENES = 6;
 const MAXIMO_TAMANO_IMAGEN = 5 * 1024 * 1024;
 

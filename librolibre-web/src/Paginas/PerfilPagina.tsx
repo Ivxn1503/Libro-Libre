@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+
+import { URL_API } from "../config";
+
 import {
   ArrowLeft,
   BookOpen,
@@ -54,7 +57,6 @@ type RespuestaEliminar = {
   mensaje?: string;
 };
 
-const URL_API = "http://localhost:3000";
 const FOTO_POR_DEFECTO = "/avatar-default.png";
 
 function PerfilPagina() {

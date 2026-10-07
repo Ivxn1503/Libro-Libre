@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { URL_API } from "../config";
+
 import {
   BookOpen,
   Users,
@@ -40,7 +42,6 @@ type EstadisticasAdmin = {
   regalos: number;
 };
 
-const URL_API = "http://localhost:3000";
 
 function IniAdmin() {
   const navegar = useNavigate();
