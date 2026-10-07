@@ -1,0 +1,508 @@
+/* =========================================================
+   AUTENTICACIÓN
+   Login, registro, recuperación y restablecimiento
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   ESTRUCTURA DE LA PÁGINA
+   --------------------------------------------------------- */
+
+.auth-page {
+  background: var(--color-fondo);
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
+  min-height: 100vh;
+  overflow: visible;
+}
+
+.auth-visual {
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 255, 255, 0.25),
+      transparent 25%
+    ),
+    linear-gradient(
+      145deg,
+      #dcefd2 0%,
+      #eaf6df 48%,
+      #f7eab9 100%
+    );
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100vh;
+  padding: 2rem 8%;
+  position: relative;
+}
+
+.register-visual {
+  background:
+    radial-gradient(
+      circle at 80% 15%,
+      rgba(255, 255, 255, 0.35),
+      transparent 25%
+    ),
+    linear-gradient(
+      145deg,
+      #e1f2d7 0%,
+      #eff8e7 50%,
+      #f8e8b7 100%
+    );
+}
+
+.auth-visual-content {
+  max-width: 540px;
+}
+
+.auth-form-section {
+  align-items: center;
+  background: var(--color-superficie);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: visible;
+  padding: 3rem 7%;
+}
+
+.auth-form-wrapper {
+  max-width: 540px;
+  overflow: visible;
+  width: 100%;
+}
+
+.register-form-wrapper {
+  max-width: 680px;
+}
+
+/* ---------------------------------------------------------
+   LOGO DEL PANEL IZQUIERDO
+   --------------------------------------------------------- */
+
+.auth-logo {
+  align-items: center;
+  color: var(--color-verde-oscuro);
+  display: inline-flex;
+  gap: 0.7rem;
+  margin-bottom: 2rem;
+  width: fit-content;
+}
+
+.auth-logo:hover {
+  color: var(--color-verde-principal);
+}
+
+.auth-logo-icon {
+  align-items: center;
+  background: var(--color-verde-claro);
+  border: 1px solid #c9dfc0;
+  border-radius: 10px;
+  color: var(--color-verde-principal);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.auth-logo > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.auth-logo strong {
+  color: var(--color-verde-oscuro);
+  font-family: "Poppins", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.05;
+}
+
+.auth-logo small {
+  color: #58725c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  line-height: 1.25;
+}
+
+/* ---------------------------------------------------------
+   TEXTO DEL PANEL IZQUIERDO
+   --------------------------------------------------------- */
+
+.auth-badge,
+.section-label {
+  color: #4f8b51;
+  display: inline-block;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.auth-badge {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(79, 139, 81, 0.2);
+  border-radius: 999px;
+  margin-bottom: 1.3rem;
+  padding: 0.5rem 0.8rem;
+}
+
+.auth-visual h1 {
+  color: var(--color-verde-oscuro);
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(2.4rem, 4.3vw, 4.4rem);
+  letter-spacing: -2px;
+  line-height: 1.1;
+  margin: 1.2rem 0;
+}
+
+.auth-visual h1 span {
+  color: var(--color-verde-medio);
+  display: block;
+}
+
+.auth-visual-content > p {
+  color: #536756;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 480px;
+}
+
+.auth-visual-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-top: 1.5rem;
+  max-width: 610px;
+}
+
+.auth-visual-points span {
+  color: #456148;
+  font-size: 0.93rem;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.auth-quote {
+  color: #5d755f;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.95rem;
+  font-style: italic;
+  margin: 2rem 0 0;
+}
+
+/* ---------------------------------------------------------
+   ILUSTRACIÓN DE LIBROS PARA REGISTRO
+   --------------------------------------------------------- */
+
+.register-book-stack {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2rem;
+  max-width: 280px;
+  transform: rotate(-5deg);
+}
+
+.stack-book {
+  margin-top: -4px;
+  padding: 0.75rem 1rem;
+}
+
+.stack-book-two {
+  transform: rotate(-2deg);
+}
+
+.stack-book-three {
+  transform: rotate(2deg);
+}
+
+/* ---------------------------------------------------------
+   TÍTULOS Y FORMULARIOS
+   --------------------------------------------------------- */
+
+.auth-title {
+  margin-bottom: 2rem;
+}
+
+.auth-title h2 {
+  color: var(--color-verde-oscuro);
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  letter-spacing: -1.4px;
+  line-height: 1.1;
+  margin: 0.45rem 0 0.7rem;
+}
+
+.auth-title p {
+  color: #6a786c;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  overflow: visible;
+}
+
+.auth-form label {
+  color: #3f5342;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  gap: 0.5rem;
+}
+
+.auth-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.auth-switch {
+  color: #6a786c;
+  font-size: 0.9rem;
+  margin: 1.5rem 0 0;
+  text-align: center;
+}
+
+.auth-switch a {
+  color: var(--color-verde-principal);
+  font-weight: 800;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------
+   MODALIDAD DE PUBLICACIÓN
+   --------------------------------------------------------- */
+
+.modalidad-grupo {
+  border: 1px solid var(--color-borde);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.modalidad-grupo legend {
+  color: #3f5342;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+
+.modalidad-opcion {
+  align-items: flex-start !important;
+  background: var(--color-superficie);
+  border: 1px solid #e4eddf;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 0.7rem !important;
+  padding: 0.8rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.modalidad-opcion:hover {
+  background: var(--color-verde-claro);
+  border-color: #9fc59d;
+}
+
+.modalidad-opcion input {
+  accent-color: var(--color-verde-principal);
+  margin-top: 0.2rem;
+}
+
+.modalidad-opcion span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.modalidad-opcion strong {
+  color: var(--color-verde-oscuro);
+  font-family: "Poppins", sans-serif;
+}
+
+.modalidad-opcion small {
+  color: #69766b;
+  font-family: "Lato", Arial, sans-serif;
+  font-weight: 400;
+}
+
+/* ---------------------------------------------------------
+   PREVISTA DE IMÁGENES Y FOTO DE PERFIL
+   --------------------------------------------------------- */
+
+.vista-previa-imagen {
+  background: #f3f6ef;
+  border: 1px solid #d8e2d4;
+  border-radius: 14px;
+  height: 230px;
+  margin-top: -0.3rem;
+  overflow: hidden;
+  position: relative;
+  width: 180px;
+}
+
+.vista-previa-imagen img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.quitar-imagen {
+  align-items: center;
+  background: rgba(41, 71, 45, 0.88);
+  border: 0;
+  border-radius: 50%;
+  color: #ffffff;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 30px;
+}
+
+.quitar-imagen:hover {
+  background: var(--color-error);
+}
+
+.label-con-ayuda {
+  overflow: visible;
+  position: relative;
+}
+
+.titulo-con-ayuda {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.boton-ayuda {
+  align-items: center;
+  background: #e8f2e3;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-verde-principal);
+  display: inline-flex;
+  height: 16px;
+  justify-content: center;
+  padding: 0;
+  width: 16px;
+}
+
+.boton-ayuda svg {
+  height: 12px;
+  width: 12px;
+}
+
+.boton-ayuda:hover {
+  background: var(--color-verde-principal);
+  color: #ffffff;
+}
+
+.ayuda-isbn {
+  background: #ffffff;
+  border: 1px solid #c9dec3;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(35, 70, 42, 0.18);
+  color: #36513a;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  left: 0;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 300px;
+  padding: 11px 13px;
+  position: absolute;
+  top: 27px;
+  width: min(300px, calc(100vw - 2rem));
+  z-index: 50;
+}
+
+.rejilla-vistas-previas {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: -0.3rem;
+  max-width: 430px;
+}
+
+.rejilla-vistas-previas .vista-previa-imagen {
+  height: 145px;
+  margin: 0;
+  width: 100%;
+}
+
+.rejilla-vistas-previas .vista-previa-imagen img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.insignia-portada {
+  background: var(--color-verde-principal);
+  border-radius: 999px;
+  bottom: 6px;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  left: 6px;
+  padding: 0.25rem 0.45rem;
+  position: absolute;
+}
+
+.rejilla-vistas-previas .quitar-imagen {
+  height: 26px;
+  padding: 0;
+  right: 6px;
+  top: 6px;
+  width: 26px;
+}
+
+.vista-previa-perfil {
+  background: #f3f6ef;
+  border: 1px solid #d8e2d4;
+  border-radius: 50%;
+  height: 130px;
+  overflow: hidden;
+  position: relative;
+  width: 130px;
+}
+
+.vista-previa-perfil img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.vista-previa-perfil .quitar-imagen {
+  height: 26px;
+  padding: 0;
+  right: 6px;
+  top: 6px;
+  width: 26px;
+}

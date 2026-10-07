@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+
+import "../Estilos/editarlib.css";
+
 import {
   ArrowLeft,
   BookOpen,

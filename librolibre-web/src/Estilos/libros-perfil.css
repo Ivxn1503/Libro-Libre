@@ -1,0 +1,656 @@
+/* =========================================================
+   PERFIL DE USUARIO
+   PerfilPagina.tsx
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   ESTRUCTURA PRINCIPAL
+   --------------------------------------------------------- */
+
+.perfil-pagina {
+  background: var(--color-fondo);
+  min-height: 100vh;
+}
+
+.perfil-contenedor {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 3rem 1.5rem 5rem;
+}
+
+.perfil-tarjeta {
+  background: #ffffff;
+  border: 1px solid #eee7d8;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(65, 81, 49, 0.1);
+  padding: 2rem;
+}
+
+/* ---------------------------------------------------------
+   IDENTIDAD DEL USUARIO
+   --------------------------------------------------------- */
+
+.perfil-identidad {
+  align-items: center;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.perfil-foto-contenedor {
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.perfil-foto {
+  background: #f3f6ef;
+  border: 3px solid #d8e2d4;
+  border-radius: 50%;
+  height: 130px;
+  object-fit: cover;
+  width: 130px;
+}
+
+.perfil-foto-boton {
+  align-items: center;
+  background: var(--color-verde-principal);
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  bottom: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  position: absolute;
+  right: 4px;
+  width: 36px;
+}
+
+.perfil-foto-boton input {
+  display: none;
+}
+
+.perfil-datos-principales {
+  min-width: 0;
+}
+
+.perfil-datos-principales h1 {
+  margin-bottom: 0.35rem;
+}
+
+.perfil-correo {
+  color: #6a786c;
+  margin-bottom: 0.5rem;
+}
+
+.perfil-ubicacion {
+  align-items: center;
+  color: #557158;
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.perfil-ubicacion input,
+.perfil-input-nombre {
+  background: #fafcf8;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  color: var(--color-verde-oscuro);
+  outline: none;
+  padding: 0.45rem 0.6rem;
+}
+
+.perfil-input-nombre {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------
+   ACCIONES Y DESCRIPCIÓN
+   --------------------------------------------------------- */
+
+.perfil-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.perfil-descripcion {
+  border-top: 1px solid #edf0ea;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+.perfil-descripcion p {
+  color: #5e6e60;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.perfil-descripcion label {
+  color: #3f5342;
+  display: block;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+  margin-top: 0.9rem;
+}
+
+.perfil-descripcion textarea,
+.perfil-descripcion input {
+  background: #fafcf8;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  color: #2c3d2e;
+  outline: none;
+  padding: 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------
+   ESTADÍSTICAS
+   --------------------------------------------------------- */
+
+.perfil-estadisticas {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 1.5rem;
+}
+
+.perfil-estadisticas div {
+  background: #ffffff;
+  border: 1px solid #eee7d8;
+  border-radius: 16px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.perfil-estadisticas strong,
+.perfil-estadisticas span {
+  display: block;
+}
+
+.perfil-estadisticas strong {
+  color: var(--color-verde-principal);
+  font-family: "Poppins", sans-serif;
+  font-size: 2rem;
+}
+
+.perfil-estadisticas span {
+  color: #607262;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* ---------------------------------------------------------
+   LIBROS PUBLICADOS POR EL USUARIO
+   --------------------------------------------------------- */
+
+.perfil-libros-seccion {
+  margin-top: 3rem;
+}
+
+.perfil-seccion-titulo {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.perfil-seccion-titulo h2 {
+  margin-bottom: 0;
+  margin-top: 0.35rem;
+}
+
+.perfil-libros-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.perfil-libro-card {
+  background: #ffffff;
+  border: 1px solid #eee7d8;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(65, 81, 49, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.perfil-libro-imagen {
+  align-items: center;
+  background: #e9f0df;
+  color: var(--color-verde-medio);
+  display: flex;
+  height: 190px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.perfil-libro-imagen img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.perfil-libro-contenido {
+  padding: 1rem 1rem 1.15rem;
+}
+
+.perfil-libro-modalidad,
+.perfil-libro-estatus {
+  color: #5a935c;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.perfil-libro-card h3 {
+  font-size: 1.05rem;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.perfil-libro-card p {
+  color: #6d756d;
+  margin-bottom: 0.7rem;
+}
+
+.perfil-libro-estatus {
+  color: #607262;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.perfil-libro-acciones {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* ---------------------------------------------------------
+   BOTONES DE LIBROS DEL PERFIL
+   --------------------------------------------------------- */
+
+.boton-libro-editar,
+.boton-libro-eliminar-superior {
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 6px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.boton-libro-editar {
+  background: #e5f2e2;
+  color: #2f7139;
+  padding: 9px 12px;
+}
+
+.boton-libro-editar:hover {
+  background: #d5ebd1;
+  transform: translateY(-2px);
+}
+
+.boton-libro-eliminar-superior {
+  background: #fff0ed;
+  color: #b2483d;
+  padding: 8px 10px;
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 2;
+}
+
+.boton-libro-eliminar-superior:hover {
+  background: #ffe1dc;
+  transform: translateY(-2px);
+}
+
+.boton-libro-editar:disabled,
+.boton-libro-eliminar-superior:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------
+   ESTADOS VACÍOS Y ERRORES
+   --------------------------------------------------------- */
+
+.perfil-vacio,
+.perfil-mensaje {
+  background: #ffffff;
+  border: 1px dashed #c9d8bf;
+  border-radius: 18px;
+  color: #557158;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.perfil-mensaje-error {
+  color: var(--color-error);
+}
+
+/* ---------------------------------------------------------
+   VALIDACIÓN DE CORREO O CAMPO DUPLICADO
+   --------------------------------------------------------- */
+
+.campo-duplicado {
+  background: #fff8d6;
+  border-color: #e6b93f;
+  box-shadow: 0 0 0 3px rgba(230, 185, 59, 0.2);
+}
+
+.campo-duplicado:focus-within {
+  background: #fff8d6;
+  border-color: #d49d18;
+  box-shadow: 0 0 0 3px rgba(212, 157, 24, 0.22);
+}
+
+.campo-duplicado svg {
+  color: #b47c00;
+}
+
+.campo-duplicado input {
+  color: #664b00;
+}
+
+.campo-duplicado-mensaje {
+  background: #fff4bf;
+  border: 1px solid #e6b93f;
+  border-radius: 8px;
+  color: #765800;
+  display: block;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 0.5rem 0.65rem;
+}
+
+/* --- Detalle de libro --- */
+
+.detalle-pagina {
+  background: var(--color-fondo);
+  min-height: 100vh;
+}
+
+.detalle-encabezado {
+  align-items: center;
+  background: var(--color-superficie);
+  border-bottom: 1px solid #eee7d6;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 0 clamp(1rem, 8vw, 7rem);
+}
+
+.detalle-encabezado .back-link {
+  margin: 0;
+}
+
+.detalle-contenedor {
+  align-items: start;
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: clamp(2rem, 5vw, 4rem) 1.5rem 5rem;
+}
+
+.detalle-galeria {
+  min-width: 0;
+  width: 100%;
+}
+
+.detalle-imagen-principal {
+  aspect-ratio: 4 / 5;
+  background: #e9f0df;
+  border-radius: 20px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.detalle-imagen-principal img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.detalle-sin-imagen {
+  align-items: center;
+  color: var(--color-verde-medio);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.detalle-miniaturas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.detalle-miniatura {
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 75px;
+  overflow: hidden;
+  padding: 0;
+  width: 65px;
+}
+
+.detalle-miniatura.seleccionada {
+  border-color: var(--color-verde-principal);
+}
+
+.detalle-miniatura img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.detalle-informacion {
+  min-width: 0;
+}
+
+.detalle-etiquetas {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.detalle-categoria,
+.detalle-modalidad {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.35rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.detalle-categoria {
+  background: var(--color-verde-claro);
+  color: var(--color-verde-principal);
+}
+
+.detalle-modalidad-regalo {
+  background: var(--color-verde-principal);
+  color: #ffffff;
+}
+
+.detalle-modalidad-intercambio {
+  background: #b56a25;
+  color: #ffffff;
+}
+
+.detalle-informacion h1 {
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1.1;
+  margin: 1rem 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.detalle-autor {
+  color: #6a786c;
+  font-size: 1.15rem;
+  margin-bottom: 1.5rem;
+}
+
+.detalle-estado,
+.detalle-ubicacion,
+.detalle-usuario {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e3ebdf;
+  border-radius: 14px;
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.detalle-estado {
+  justify-content: space-between;
+}
+
+.detalle-estado span,
+.detalle-ubicacion span,
+.detalle-usuario span,
+.detalle-datos span {
+  color: #718071;
+  display: block;
+  font-size: 0.78rem;
+}
+
+.detalle-estado strong,
+.detalle-ubicacion strong,
+.detalle-usuario strong,
+.detalle-datos strong {
+  color: var(--color-verde-oscuro);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.detalle-datos {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.detalle-datos div {
+  background: #ffffff;
+  border: 1px solid #e3ebdf;
+  border-radius: 12px;
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.detalle-descripcion,
+.detalle-intercambio {
+  margin: 1.5rem 0;
+}
+
+.detalle-descripcion h2,
+.detalle-intercambio h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.detalle-descripcion p,
+.detalle-intercambio p {
+  color: #5e6e60;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.detalle-intercambio {
+  background: #fff5d9;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.detalle-usuario {
+  margin-top: 1.5rem;
+}
+
+.detalle-usuario-foto {
+  background: #f3f6ef;
+  border: 2px solid #d8e2d4;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 48px;
+  object-fit: cover;
+  width: 48px;
+}
+
+.detalle-propietario {
+  align-items: center;
+  background: var(--color-verde-claro);
+  border: 1px solid #c9dfc0;
+  border-radius: 12px;
+  color: #356438;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  justify-content: center;
+  margin-top: 1.2rem;
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.detalle-contactar {
+  margin-top: 1.2rem;
+  width: 100%;
+}
+
+.detalle-contactar-mensaje {
+  margin-top: 1.2rem;
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.detalle-mensaje {
+  margin: 0 auto;
+  max-width: 600px;
+  padding: 6rem 1.5rem;
+  text-align: center;
+}
+
+.detalle-mensaje-error {
+  color: var(--color-error);
+}

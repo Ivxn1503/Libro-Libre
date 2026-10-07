@@ -513,3 +513,194 @@ export function obtenerMunicipiosPorCiudad(
     )?.municipios ?? []
   );
 }
+
+
+export type UbicacionCodigoPostal = {
+  estado: string;
+  ciudad: string;
+  municipio: string;
+  colonias: string[];
+};
+
+/* Códigos postales disponibles para autocompletar ubicación */
+export const ubicacionesPorCodigoPostal: Record<
+  string,
+  UbicacionCodigoPostal
+> = {
+  "01000": {
+    estado: "Ciudad de México",
+    ciudad: "Álvaro Obregón",
+    municipio: "Álvaro Obregón",
+    colonias: [
+      "San Ángel",
+      "Tlacopac",
+      "Guadalupe Inn",
+      "Chimalistac",
+    ],
+  },
+
+  "03100": {
+    estado: "Ciudad de México",
+    ciudad: "Benito Juárez",
+    municipio: "Benito Juárez",
+    colonias: [
+      "Del Valle Centro",
+      "Del Valle Norte",
+      "Del Valle Sur",
+    ],
+  },
+
+  "06000": {
+    estado: "Ciudad de México",
+    ciudad: "Cuauhtémoc",
+    municipio: "Cuauhtémoc",
+    colonias: ["Centro"],
+  },
+
+  "44100": {
+    estado: "Jalisco",
+    ciudad: "Guadalajara",
+    municipio: "Guadalajara",
+    colonias: [
+      "Centro",
+      "Americana",
+      "Lafayette",
+      "San Juan de Dios",
+    ],
+  },
+
+  "44600": {
+    estado: "Jalisco",
+    ciudad: "Guadalajara",
+    municipio: "Guadalajara",
+    colonias: [
+      "Ladrón de Guevara",
+      "Providencia",
+      "Italia Providencia",
+    ],
+  },
+
+  "45030": {
+    estado: "Jalisco",
+    ciudad: "Zapopan",
+    municipio: "Zapopan",
+    colonias: [
+      "Zapopan Centro",
+      "Seattle",
+      "La Giralda",
+    ],
+  },
+
+  "45116": {
+    estado: "Jalisco",
+    ciudad: "Zapopan",
+    municipio: "Zapopan",
+    colonias: [
+      "Puerta de Hierro",
+      "Valle Real",
+      "Virreyes",
+    ],
+  },
+
+  "48500": {
+    estado: "Jalisco",
+    ciudad: "Autlán de Navarro",
+    municipio: "Autlán de Navarro",
+    colonias: [
+      "Centro",
+      "Echeverría",
+      "La Grana",
+    ],
+  },
+
+  "58000": {
+    estado: "Michoacán",
+    ciudad: "Morelia",
+    municipio: "Morelia",
+    colonias: ["Centro Histórico"],
+  },
+
+  "64000": {
+    estado: "Nuevo León",
+    ciudad: "Monterrey",
+    municipio: "Monterrey",
+    colonias: ["Centro"],
+  },
+
+  "72000": {
+    estado: "Puebla",
+    ciudad: "Puebla",
+    municipio: "Puebla",
+    colonias: ["Centro"],
+  },
+
+  "76000": {
+    estado: "Querétaro",
+    ciudad: "Santiago de Querétaro",
+    municipio: "Querétaro",
+    colonias: ["Centro"],
+  },
+
+  "77500": {
+    estado: "Quintana Roo",
+    ciudad: "Cancún",
+    municipio: "Benito Juárez",
+    colonias: ["Centro"],
+  },
+
+  "80000": {
+    estado: "Sinaloa",
+    ciudad: "Culiacán",
+    municipio: "Culiacán",
+    colonias: ["Centro"],
+  },
+
+  "83000": {
+    estado: "Sonora",
+    ciudad: "Hermosillo",
+    municipio: "Hermosillo",
+    colonias: ["Centro"],
+  },
+
+  "90000": {
+    estado: "Tlaxcala",
+    ciudad: "Tlaxcala de Xicohténcatl",
+    municipio: "Tlaxcala",
+    colonias: ["Centro"],
+  },
+
+  "91000": {
+    estado: "Veracruz",
+    ciudad: "Xalapa",
+    municipio: "Xalapa",
+    colonias: ["Centro"],
+  },
+
+  "97000": {
+    estado: "Yucatán",
+    ciudad: "Mérida",
+    municipio: "Mérida",
+    colonias: ["Centro"],
+  },
+
+  "98000": {
+    estado: "Zacatecas",
+    ciudad: "Zacatecas",
+    municipio: "Zacatecas",
+    colonias: ["Centro"],
+  },
+};
+
+export function obtenerUbicacionPorCodigoPostal(
+  codigoPostal: string,
+): UbicacionCodigoPostal | null {
+  const codigoLimpio = codigoPostal
+    .replace(/\D/g, "")
+    .slice(0, 5);
+
+  if (codigoLimpio.length !== 5) {
+    return null;
+  }
+
+  return ubicacionesPorCodigoPostal[codigoLimpio] ?? null;
+}

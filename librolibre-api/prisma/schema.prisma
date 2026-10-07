@@ -39,69 +39,74 @@ enum CondicionLibro {
 }
 
 model Usuario {
-  id                         Int           @id @default(autoincrement())
-  nombre                     String
-  correo                     String        @unique
-  contrasenaHash             String
-  telefono                   String?       @unique
-  foto                       String?
-  ciudad                     String?
-  estado                     String?
-  descripcion                String?
-  tokenRecuperacionHash      String?
-  tokenRecuperacionExpiraEn  DateTime?
-  rol                        RolUsuario    @default(USUARIO)
-  estatus                    EstadoUsuario @default(ACTIVO)
-  creadoEn                   DateTime      @default(now())
-  actualizadoEn              DateTime      @updatedAt
+  id                        Int           @id @default(autoincrement())
+  nombre                    String
+  correo                    String        @unique
+  contrasenaHash            String
+  telefono                  String?       @unique
+  foto                      String?
+  ciudad                    String?
+  estado                    String?
+  descripcion               String?
+  tokenRecuperacionHash     String?
+  tokenRecuperacionExpiraEn DateTime?
+  rol                       RolUsuario    @default(USUARIO)
+  estatus                   EstadoUsuario @default(ACTIVO)
+  creadoEn                  DateTime      @default(now())
+  actualizadoEn             DateTime      @updatedAt
 
-  libros                     Libro[]
+  libros Libro[]
 
   @@map("usuarios")
 }
 
 model Categoria {
-  id             Int       @id @default(autoincrement())
-  nombre         String    @unique
-  descripcion    String?
-  icono          String?
-  activa         Boolean   @default(true)
-  creadoEn       DateTime  @default(now())
-  actualizadoEn  DateTime  @updatedAt
+  id            Int      @id @default(autoincrement())
+  nombre        String   @unique
+  descripcion   String?
+  icono         String?
+  activa        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  libros         Libro[]
+  libros Libro[]
 
   @@map("categorias")
 }
 
 model Libro {
-  id                    Int             @id @default(autoincrement())
-  titulo                String
-  autor                 String
-  editorial             String?
-  isbn                  String?
-  anoPublicacion        Int?
-  condicion             CondicionLibro
-  descripcion           String
-  modalidad             ModalidadLibro
+  id                     Int            @id @default(autoincrement())
+  titulo                 String
+  autor                  String
+  editorial              String?
+  isbn                   String?
+  anoPublicacion         Int?
+  condicion              CondicionLibro
+  descripcion            String
+  modalidad              ModalidadLibro
   descripcionIntercambio String?
-  ciudad                String
-  estado                String
-  colonia               String?
-  estatus               EstadoLibro     @default(DISPONIBLE)
-  usuarioId             Int
-  categoriaId           Int
-  creadoEn              DateTime        @default(now())
-  actualizadoEn         DateTime        @updatedAt
 
-  usuario               Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  categoria             Categoria       @relation(fields: [categoriaId], references: [id])
-  imagenes              ImagenLibro[]
+  codigoPostal String?
+  estado       String
+  ciudad       String
+  municipio    String?
+  colonia      String?
+
+  estatus       EstadoLibro @default(DISPONIBLE)
+  usuarioId     Int
+  categoriaId   Int
+  creadoEn      DateTime    @default(now())
+  actualizadoEn DateTime    @updatedAt
+
+  usuario   Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria Categoria     @relation(fields: [categoriaId], references: [id])
+  imagenes  ImagenLibro[]
 
   @@index([usuarioId])
   @@index([categoriaId])
   @@index([estatus])
   @@index([ciudad, estado])
+  @@index([codigoPostal])
   @@map("libros")
 }
 
@@ -113,7 +118,7 @@ model ImagenLibro {
   libroId   Int
   creadoEn  DateTime @default(now())
 
-  libro     Libro    @relation(fields: [libroId], references: [id], onDelete: Cascade)
+  libro Libro @relation(fields: [libroId], references: [id], onDelete: Cascade)
 
   @@index([libroId])
   @@map("imagenes_libros")

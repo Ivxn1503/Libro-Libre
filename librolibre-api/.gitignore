@@ -1,5 +1,10 @@
 node_modules
-# Keep environment variables out of version control
+
+# Variables de entorno
 .env
 
+# Archivos generados por Prisma
 /generated/prisma
+
+# Archivos subidos localmente
+uploads/

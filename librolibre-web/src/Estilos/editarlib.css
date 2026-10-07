@@ -1,0 +1,612 @@
+/* =========================================================
+   EDITAR LIBRO
+   Archivo: src/Estilos/editarlib.css
+   ========================================================= */
+
+.editar-libro-pagina {
+  background:
+    radial-gradient(
+      circle at 8% 8%,
+      rgba(226, 242, 217, 0.9),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(255, 229, 162, 0.38),
+      transparent 22%
+    ),
+    #fff8e7;
+  color: #243126;
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+/* Encabezado superior */
+.editar-libro-pagina .detalle-encabezado {
+  align-items: center;
+  background: rgba(255, 253, 247, 0.96);
+  border-bottom: 1px solid #eee7d6;
+  display: flex;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 0 clamp(1rem, 8vw, 7rem);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.editar-libro-pagina .detalle-encabezado .back-link {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: #557158;
+  display: inline-flex;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.editar-libro-pagina .detalle-encabezado .back-link:hover {
+  background: #edf7e9;
+  color: #2e7d32;
+  transform: translateX(-3px);
+}
+
+.editar-libro-pagina .marca {
+  background: transparent;
+  border: 0;
+  color: #2e7d32;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.editar-libro-pagina .marca::before {
+  content: "📚";
+  font-size: 1.25rem;
+  margin-right: 0.4rem;
+}
+
+/* Contenedor principal */
+.editar-libro-contenedor {
+  margin: 0 auto;
+  max-width: 1080px;
+  padding: clamp(2rem, 5vw, 4rem) 1.25rem 5rem;
+}
+
+/* Tarjeta de título */
+.editar-libro-encabezado {
+  align-items: center;
+  background:
+    radial-gradient(
+      circle at 88% 22%,
+      rgba(255, 255, 255, 0.75),
+      transparent 26%
+    ),
+    linear-gradient(135deg, #e5f3df 0%, #f3f8e8 52%, #fff3d2 100%);
+  border: 1px solid #dce7d6;
+  border-radius: 24px;
+  box-shadow: 0 12px 28px rgba(65, 81, 49, 0.09);
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.editar-libro-encabezado h1 {
+  color: #29472d;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin: 0.45rem 0 0.7rem;
+}
+
+.editar-libro-encabezado p {
+  color: #607262;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.editar-libro-encabezado > svg {
+  color: #2e7d32;
+  flex: 0 0 auto;
+  height: 56px;
+  width: 56px;
+}
+
+/* Etiqueta superior: MI PUBLICACIÓN */
+.editar-libro-pagina .section-label {
+  color: #4f8b51;
+  display: inline-block;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+/* Formulario */
+.editar-libro-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Secciones: información, modalidad, ubicación, imágenes */
+.editar-libro-seccion {
+  background: #ffffff;
+  border: 1px solid #eee7d8;
+  border-radius: 20px;
+  box-shadow: 0 10px 26px rgba(65, 81, 49, 0.08);
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.editar-libro-seccion h2 {
+  align-items: center;
+  border-bottom: 1px solid #edf0ea;
+  color: #29472d;
+  display: flex;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 1.3rem;
+  gap: 0.5rem;
+  margin: 0 0 1.35rem;
+  padding-bottom: 0.75rem;
+}
+
+.editar-libro-seccion h2 svg {
+  color: #477a44;
+}
+
+/* Dos columnas de campos */
+.editar-libro-grid {
+  display: grid;
+  gap: 1.15rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Etiquetas */
+.editar-libro-seccion label {
+  color: #3f5342;
+  display: flex;
+  flex-direction: column;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.83rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.editar-libro-grid label {
+  margin-top: 0;
+}
+
+/* Campos */
+.editar-libro-seccion input,
+.editar-libro-seccion select,
+.editar-libro-seccion textarea {
+  background: #fafcf8;
+  border: 1px solid #dce7d6;
+  border-radius: 12px;
+  color: #2c3d2e;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.96rem;
+  outline: none;
+  padding: 0.78rem 0.85rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+  width: 100%;
+}
+
+.editar-libro-seccion input,
+.editar-libro-seccion select {
+  min-height: 48px;
+}
+
+.editar-libro-seccion select {
+  cursor: pointer;
+}
+
+.editar-libro-seccion textarea {
+  line-height: 1.55;
+  min-height: 130px;
+  resize: vertical;
+}
+
+.editar-libro-seccion input:hover,
+.editar-libro-seccion select:hover,
+.editar-libro-seccion textarea:hover {
+  border-color: #aacba7;
+}
+
+.editar-libro-seccion input:focus,
+.editar-libro-seccion select:focus,
+.editar-libro-seccion textarea:focus {
+  background: #ffffff;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.13);
+}
+
+.editar-libro-seccion input:disabled,
+.editar-libro-seccion select:disabled,
+.editar-libro-seccion textarea:disabled {
+  background: #f0f2ed;
+  color: #879088;
+  cursor: not-allowed;
+}
+
+/* Área de modalidad */
+.editar-libro-modalidades {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editar-libro-modalidades label {
+  align-items: flex-start;
+  background: #fffdf7;
+  border: 1px solid #dce7d6;
+  border-radius: 15px;
+  cursor: pointer;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  margin: 0;
+  padding: 1rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.editar-libro-modalidades label:hover {
+  background: #edf7e9;
+  border-color: #9fc59d;
+  box-shadow: 0 8px 16px rgba(46, 125, 50, 0.09);
+  transform: translateY(-2px);
+}
+
+.editar-libro-modalidades label.modalidad-activa {
+  background: #eaf6e5;
+  border-color: #72a76e;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.editar-libro-modalidades input {
+  accent-color: #2e7d32;
+  margin: 0.25rem 0 0;
+  min-height: auto;
+  padding: 0;
+  width: auto;
+}
+
+.editar-libro-modalidades svg {
+  color: #2e7d32;
+  margin-top: 0.05rem;
+}
+
+.editar-libro-modalidades span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.editar-libro-modalidades strong {
+  color: #29472d;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.95rem;
+}
+
+.editar-libro-modalidades small {
+  color: #69766b;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+/* Textos de ayuda */
+.editar-libro-ayuda {
+  color: #607262;
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+/* Galería de imágenes */
+.editar-libro-imagenes-actuales,
+.editar-libro-imagenes-nuevas {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.editar-libro-imagenes-actuales img,
+.editar-libro-imagenes-nuevas img {
+  aspect-ratio: 1 / 1;
+  background: #f3f6ef;
+  border: 1px solid #dce7d6;
+  border-radius: 13px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.editar-libro-imagenes-nuevas > div {
+  position: relative;
+}
+
+/* Selector de nuevas imágenes */
+.editar-libro-selector-imagenes {
+  align-items: center !important;
+  background: #edf7e9;
+  border: 1px dashed #72a76e;
+  border-radius: 13px;
+  color: #2e7d32 !important;
+  cursor: pointer;
+  display: flex !important;
+  flex-direction: row !important;
+  font-size: 0.9rem !important;
+  justify-content: center;
+  margin-top: 1rem !important;
+  min-height: 70px;
+  padding: 1rem;
+  text-align: center;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.editar-libro-selector-imagenes:hover {
+  background: #e0f1da;
+  border-color: #2e7d32;
+  transform: translateY(-2px);
+}
+
+.editar-libro-selector-imagenes input {
+  display: none;
+}
+
+/* Eliminar vista previa nueva */
+.editar-libro-imagenes-nuevas button {
+  align-items: center;
+  background: #a8413b;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+  width: 30px;
+}
+
+.editar-libro-imagenes-nuevas button:hover {
+  background: #85352f;
+  transform: scale(1.06);
+}
+
+/* Mensajes */
+.editar-libro-mensaje,
+.editar-libro-error {
+  background: #fff0ed;
+  border: 1px solid #e8b1a8;
+  border-radius: 12px;
+  color: #a8413b;
+  font-family: "Lato", Arial, sans-serif;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.9rem 1rem;
+}
+
+.editar-libro-mensaje-exito {
+  background: #edf7e9;
+  border-color: #c9dfc0;
+  color: #356438;
+}
+
+/* Botones inferiores */
+.editar-libro-acciones {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.editar-libro-acciones .boton,
+.editar-libro-acciones .button {
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  display: inline-flex;
+  font-family: "Poppins", Arial, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 50px;
+  min-width: 170px;
+  padding: 0.75rem 1.2rem;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.editar-libro-acciones .boton:hover,
+.editar-libro-acciones .button:hover {
+  transform: translateY(-3px);
+}
+
+.editar-libro-acciones .boton:disabled,
+.editar-libro-acciones .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.editar-libro-acciones .boton.primario,
+.editar-libro-acciones .button-primary {
+  background: linear-gradient(135deg, #477a44 0%, #2e7d32 100%);
+  border-color: #2e7d32;
+  box-shadow: 0 7px 16px rgba(46, 125, 50, 0.2);
+  color: #ffffff;
+}
+
+.editar-libro-acciones .boton.primario:hover,
+.editar-libro-acciones .button-primary:hover {
+  background: linear-gradient(135deg, #3e6f3b 0%, #256829 100%);
+  border-color: #256829;
+  box-shadow: 0 11px 22px rgba(46, 125, 50, 0.28);
+}
+
+.editar-libro-acciones .boton.secundario,
+.editar-libro-acciones .button-secondary,
+.editar-libro-acciones .button-outline {
+  background: #ffffff;
+  border-color: #477a44;
+  box-shadow: 0 5px 13px rgba(65, 81, 49, 0.08);
+  color: #2e7d32;
+}
+
+.editar-libro-acciones .boton.secundario:hover,
+.editar-libro-acciones .button-secondary:hover,
+.editar-libro-acciones .button-outline:hover {
+  background: #edf7e9;
+  border-color: #2e7d32;
+}
+
+/* Accesibilidad */
+.editar-libro-pagina button:focus-visible,
+.editar-libro-pagina input:focus-visible,
+.editar-libro-pagina select:focus-visible,
+.editar-libro-pagina textarea:focus-visible {
+  outline: 3px solid rgba(230, 169, 107, 0.85);
+  outline-offset: 3px;
+}
+
+/* Tablets */
+@media (max-width: 760px) {
+  .editar-libro-pagina .detalle-encabezado {
+    min-height: 70px;
+    padding: 0 1rem;
+  }
+
+  .editar-libro-pagina .marca {
+    font-size: 1.3rem;
+  }
+
+  .editar-libro-contenedor {
+    padding: 2rem 1rem 4rem;
+  }
+
+  .editar-libro-encabezado {
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.4rem;
+  }
+
+  .editar-libro-encabezado > svg {
+    height: 40px;
+    width: 40px;
+  }
+
+  .editar-libro-grid,
+  .editar-libro-modalidades {
+    grid-template-columns: 1fr;
+  }
+
+  .editar-libro-imagenes-actuales,
+  .editar-libro-imagenes-nuevas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editar-libro-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .editar-libro-acciones .boton,
+  .editar-libro-acciones .button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* Celulares */
+@media (max-width: 480px) {
+  .editar-libro-pagina .detalle-encabezado {
+    padding: 0 0.7rem;
+  }
+
+  .editar-libro-pagina .marca {
+    font-size: 1.15rem;
+  }
+
+  .editar-libro-pagina .marca::before {
+    font-size: 1rem;
+    margin-right: 0.25rem;
+  }
+
+  .editar-libro-pagina .detalle-encabezado .back-link {
+    font-size: 0.82rem;
+    padding: 0.45rem;
+  }
+
+  .editar-libro-contenedor {
+    padding: 1.5rem 0.8rem 3rem;
+  }
+
+  .editar-libro-encabezado {
+    flex-direction: column;
+  }
+
+  .editar-libro-encabezado > svg {
+    align-self: flex-end;
+  }
+
+  .editar-libro-encabezado h1 {
+    font-size: 2rem;
+  }
+
+  .editar-libro-seccion {
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .editar-libro-seccion h2 {
+    font-size: 1.15rem;
+  }
+
+  .editar-libro-imagenes-actuales,
+  .editar-libro-imagenes-nuevas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

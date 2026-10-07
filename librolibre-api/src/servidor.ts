@@ -2,7 +2,6 @@ import "dotenv/config";
 
 import cors from "cors";
 import express from "express";
-import path from "node:path";
 
 import rutasAutenticacion from "./rutas/autenticacion.js";
 import rutasCategorias from "./rutas/categorias.js";
@@ -17,13 +16,6 @@ const puerto = Number(process.env.PORT) || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(
-  "/uploads",
-  express.static(
-    path.resolve(process.cwd(), "uploads"),
-  ),
-);
 
 app.get("/", (_peticion, respuesta) => {
   return respuesta.json({

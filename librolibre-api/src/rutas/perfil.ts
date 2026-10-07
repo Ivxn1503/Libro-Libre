@@ -1,42 +1,17 @@
 import { Router } from "express";
 import multer from "multer";
-import fs from "node:fs";
-import path from "node:path";
+import crypto from "node:crypto";
 
 import {
   type PeticionAutenticada,
   requiereAutenticacion,
 } from "../intermedios/autenticacion.js";
 import prisma from "../prisma.js";
+import supabase from "../supabase.js";
 
 const router = Router();
 
-const carpetaPerfiles = path.resolve(
-  process.cwd(),
-  "uploads",
-  "perfiles",
-);
-
-fs.mkdirSync(carpetaPerfiles, {
-  recursive: true,
-});
-
-const almacenamientoFoto = multer.diskStorage({
-  destination: (_peticion, _archivo, callback) => {
-    callback(null, carpetaPerfiles);
-  },
-
-  filename: (_peticion, archivo, callback) => {
-    const extension =
-      path.extname(archivo.originalname).toLowerCase() || ".jpg";
-
-    const nombreArchivo = `perfil-${Date.now()}-${Math.round(
-      Math.random() * 1e9,
-    )}${extension}`;
-
-    callback(null, nombreArchivo);
-  },
-});
+const almacenamientoFoto = multer.memoryStorage();
 
 const subirFoto = multer({
   storage: almacenamientoFoto,
@@ -55,11 +30,40 @@ const subirFoto = multer({
       return;
     }
 
-    callback(
-      new Error("La foto debe ser JPG, PNG o WebP."),
-    );
+    callback(new Error("La foto debe ser JPG, PNG o WebP."));
   },
 });
+
+async function subirFotoPerfil(
+  archivo: Express.Multer.File,
+) {
+  const extension =
+    archivo.originalname.split(".").pop()?.toLowerCase() || "jpg";
+
+  const nombreArchivo =
+    `perfil-${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+  const ruta = `perfiles/${nombreArchivo}`;
+
+  const { error } = await supabase.storage
+    .from("librolibre-imagenes")
+    .upload(ruta, archivo.buffer, {
+      contentType: archivo.mimetype,
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error(
+      `Error al subir la foto de perfil: ${error.message}`,
+    );
+  }
+
+  const { data } = supabase.storage
+    .from("librolibre-imagenes")
+    .getPublicUrl(ruta);
+
+  return data.publicUrl;
+}
 
 const seleccionarUsuario = {
   id: true,
@@ -221,7 +225,7 @@ router.put(
       });
 
       const fotoUrl = peticion.file
-        ? `/uploads/perfiles/${peticion.file.filename}`
+        ? await subirFotoPerfil(peticion.file)
         : usuarioActual?.foto ?? null;
 
       const usuarioActualizado = await prisma.usuario.update({
