@@ -38,6 +38,12 @@ enum CondicionLibro {
   DANADO
 }
 
+enum EstadoSolicitudRevision {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+
 model Usuario {
   id                        Int           @id @default(autoincrement())
   nombre                    String
@@ -56,6 +62,8 @@ model Usuario {
   actualizadoEn             DateTime      @updatedAt
 
   libros Libro[]
+
+  solicitudesRevision SolicitudRevision[] @relation("SolicitudesRevisionUsuario")
 
   @@map("usuarios")
 }
@@ -122,4 +130,26 @@ model ImagenLibro {
 
   @@index([libroId])
   @@map("imagenes_libros")
+}
+
+model SolicitudRevision {
+  id             Int                     @id @default(autoincrement())
+  usuarioId      Int
+  motivo         String
+  estado         EstadoSolicitudRevision @default(PENDIENTE)
+  respuestaAdmin String?
+  revisadaPorId  Int?
+  creadaEn       DateTime                @default(now())
+  actualizadaEn  DateTime                @updatedAt
+  revisadaEn     DateTime?
+
+  tokenVerificacionHash     String?   @unique
+  tokenVerificacionExpiraEn DateTime?
+  correoVerificadoEn        DateTime?
+
+  usuario Usuario @relation("SolicitudesRevisionUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([estado])
+  @@map("solicitudes_revision")
 }

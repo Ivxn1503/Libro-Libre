@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { URL_API } from "../config";
-
 import {
   ArrowRight,
   BookOpen,
@@ -14,6 +12,7 @@ import {
   Search,
   Upload,
   UsersRound,
+  ShieldCheck,
   X,
 } from "lucide-react";
 
@@ -77,25 +76,27 @@ function IniPagina() {
   const navegar = useNavigate();
 
   const [sesionIniciada, setSesionIniciada] = useState(
-    Boolean(localStorage.getItem("token")),
+    Boolean(localStorage.getItem("token"))
   );
   const [nombreUsuario, setNombreUsuario] = useState("");
+  const [esAdministrador, setEsAdministrador] = useState(false);
   const [fotoUsuario, setFotoUsuario] = useState<string | null>(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] =
-    useState("Todos");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
   const [libros, setLibros] = useState<Libro[]>([]);
   const [estaCargandoLibros, setEstaCargandoLibros] = useState(true);
   const [errorLibros, setErrorLibros] = useState("");
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
+
   const [estadisticas, setEstadisticas] = useState<Estadisticas>({
     librosReutilizados: 0,
     usuariosEnComunidad: 0,
     intercambiosRealizados: 0,
     librosRegalados: 0,
   });
-  const [estaCargandoEstadisticas, setEstaCargandoEstadisticas] =
-    useState(true);
+
+  const [estaCargandoEstadisticas, setEstaCargandoEstadisticas] = useState(true);
 
   useEffect(() => {
     const actualizarSesion = () => {
@@ -107,6 +108,7 @@ function IniPagina() {
       if (!usuarioGuardado) {
         setNombreUsuario("");
         setFotoUsuario(null);
+        setEsAdministrador(false);
         return;
       }
 
@@ -114,16 +116,15 @@ function IniPagina() {
         const usuario = JSON.parse(usuarioGuardado);
 
         setNombreUsuario(
-          usuario.nombre ??
-          usuario.nombres ??
-          usuario.correo ??
-          "Mi cuenta",
+          usuario.nombre ?? usuario.nombres ?? usuario.correo ?? "Mi cuenta"
         );
         setFotoUsuario(usuario.foto ?? null);
+        setEsAdministrador(Boolean(token) && usuario.rol === "ADMINISTRADOR");
       } catch (error) {
         console.error("No se pudo leer el usuario guardado:", error);
         setNombreUsuario("Mi cuenta");
         setFotoUsuario(null);
+        setEsAdministrador(false);
       }
     };
 
@@ -146,8 +147,8 @@ function IniPagina() {
         const respuesta = await fetch(`${URL_API}/api/libros`, {
           headers: token
             ? {
-              Authorization: `Bearer ${token}`,
-            }
+                Authorization: `Bearer ${token}`,
+              }
             : undefined,
         });
 
@@ -174,9 +175,7 @@ function IniPagina() {
       try {
         setEstaCargandoEstadisticas(true);
 
-        const respuesta = await fetch(
-          `${URL_API}/api/libros/estadisticas`,
-        );
+        const respuesta = await fetch(`${URL_API}/api/libros/estadisticas`);
 
         if (!respuesta.ok) {
           throw new Error("No fue posible obtener las estadísticas.");
@@ -198,6 +197,7 @@ function IniPagina() {
     document.getElementById(id)?.scrollIntoView({
       behavior: "smooth",
     });
+
     setMenuAbierto(false);
   };
 
@@ -206,34 +206,41 @@ function IniPagina() {
     setMenuAbierto(false);
   };
 
+  const irAAdministracion = () => {
+    navegar("/admin");
+    setMenuAbierto(false);
+  };
+
   const irAMiCuenta = () => {
     navegar("/app");
     setMenuAbierto(false);
   };
 
- 
+  const cerrarSesion = () => {
+    setMostrarConfirmacion(true);
+  };
+
   const confirmarCerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+
     setSesionIniciada(false);
     setNombreUsuario("");
     setFotoUsuario(null);
+    setEsAdministrador(false);
     setMenuAbierto(false);
     setMostrarConfirmacion(false);
+
     navegar("/");
-  };
-
-  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
-
-   const cerrarSesion = () => {
-    setMostrarConfirmacion(true);
   };
 
   const obtenerUrlFotoUsuario = (foto: string | null) => {
     if (!foto) return FOTO_POR_DEFECTO;
+
     if (foto.startsWith("http://") || foto.startsWith("https://")) {
       return foto;
     }
+
     return `${URL_API}${foto.startsWith("/") ? foto : `/${foto}`}`;
   };
 
@@ -246,30 +253,37 @@ function IniPagina() {
 
     return libros.filter((libro) => {
       const nombreCategoria = libro.categoria?.nombre ?? "Otros";
+
       const coincideTexto =
         !textoBusqueda ||
         libro.titulo.toLowerCase().includes(textoBusqueda) ||
         libro.autor.toLowerCase().includes(textoBusqueda);
+
       const coincideCategoria =
         categoriaSeleccionada === "Todos" ||
         nombreCategoria === categoriaSeleccionada;
+
       return coincideTexto && coincideCategoria;
     });
   }, [libros, busqueda, categoriaSeleccionada]);
 
   const obtenerUrlImagen = (libro: Libro) => {
     const primeraImagen = libro.imagenes?.[0];
+
     if (!primeraImagen?.url) return null;
+
     if (
       primeraImagen.url.startsWith("http://") ||
       primeraImagen.url.startsWith("https://")
     ) {
       return primeraImagen.url;
     }
-    return `${URL_API}${primeraImagen.url.startsWith("/")
-      ? primeraImagen.url
-      : `/${primeraImagen.url}`
-      }`;
+
+    return `${URL_API}${
+      primeraImagen.url.startsWith("/")
+        ? primeraImagen.url
+        : `/${primeraImagen.url}`
+    }`;
   };
 
   const obtenerNombreModalidad = (modalidad: Libro["modalidad"]) =>
@@ -281,26 +295,48 @@ function IniPagina() {
   return (
     <main className="pagina">
       <header className="encabezado">
-        <button className="marca" type="button" onClick={() => irASeccion("inicio")}>
+        <button
+          className="marca"
+          type="button"
+          onClick={() => irASeccion("inicio")}
+        >
           LibroLibre
         </button>
 
         <nav className="navegacion">
-          <button type="button" onClick={() => irASeccion("explorar")}>
-            Explorar libros
-          </button>
-          <button type="button" onClick={() => irASeccion("como-funciona")}>
-            Cómo funciona
-          </button>
-          <button type="button" onClick={() => irASeccion("impacto")}>
-            Impacto
-          </button>
+          {sesionIniciada && esAdministrador ? (
+            <button
+              className="boton-admin-inicio"
+              type="button"
+              onClick={irAAdministracion}
+            >
+              <ShieldCheck size={27} /> Funciones de administrador
+            </button>
+          ) : (
+            <>
+              <button type="button" onClick={() => irASeccion("explorar")}>
+                Explorar libros
+              </button>
+
+              <button type="button" onClick={() => irASeccion("como-funciona")}>
+                Cómo funciona
+              </button>
+
+              <button type="button" onClick={() => irASeccion("impacto")}>
+                Impacto
+              </button>
+            </>
+          )}
         </nav>
 
         <div className="acciones-encabezado">
           {sesionIniciada ? (
             <>
-              <button className="boton texto cuenta-encabezado" type="button" onClick={irAMiCuenta}>
+              <button
+                className="boton texto cuenta-encabezado"
+                type="button"
+                onClick={irAMiCuenta}
+              >
                 <img
                   src={obtenerUrlFotoUsuario(fotoUsuario)}
                   alt=""
@@ -311,7 +347,12 @@ function IniPagina() {
                 />
                 <span>{nombreUsuario || "Mi cuenta"}</span>
               </button>
-              <button className="boton primario" type="button" onClick={cerrarSesion}>
+
+              <button
+                className="boton primario"
+                type="button"
+                onClick={cerrarSesion}
+              >
                 Cerrar sesión
               </button>
 
@@ -319,7 +360,6 @@ function IniPagina() {
                 <div className="modal-fondo">
                   <div className="modal-confirmacion">
                     <h2>¿Cerrar sesión?</h2>
-
                     <p>¿Estás seguro de que quieres cerrar sesión?</p>
 
                     <div className="modal-botones">
@@ -345,10 +385,19 @@ function IniPagina() {
             </>
           ) : (
             <>
-              <button className="boton texto" type="button" onClick={() => navegar("/iniciar-sesion")}>
+              <button
+                className="boton texto"
+                type="button"
+                onClick={() => navegar("/iniciar-sesion")}
+              >
                 Iniciar sesión
               </button>
-              <button className="boton primario" type="button" onClick={irAPublicarLibro}>
+
+              <button
+                className="boton primario"
+                type="button"
+                onClick={irAPublicarLibro}
+              >
                 Publicar un libro
               </button>
             </>
@@ -370,22 +419,44 @@ function IniPagina() {
           <button type="button" onClick={() => irASeccion("inicio")}>
             Inicio
           </button>
-          <button type="button" onClick={() => irASeccion("explorar")}>
-            Explorar libros
-          </button>
-          <button type="button" onClick={irAPublicarLibro}>
-            Publicar un libro
-          </button>
-          <button type="button" onClick={() => irASeccion("como-funciona")}>
-            Cómo funciona
-          </button>
-          <button type="button" onClick={() => irASeccion("impacto")}>
-            Impacto
-          </button>
+
+          {sesionIniciada && esAdministrador && (
+            <button
+              className="boton-admin-inicio"
+              type="button"
+              onClick={irAAdministracion}
+            >
+              <ShieldCheck size={18} /> Funciones de administrador
+            </button>
+          )}
+
+          {!(sesionIniciada && esAdministrador) && (
+            <>
+              <button type="button" onClick={() => irASeccion("explorar")}>
+                Explorar libros
+              </button>
+
+              <button type="button" onClick={irAPublicarLibro}>
+                Publicar un libro
+              </button>
+
+              <button type="button" onClick={() => irASeccion("como-funciona")}>
+                Cómo funciona
+              </button>
+
+              <button type="button" onClick={() => irASeccion("impacto")}>
+                Impacto
+              </button>
+            </>
+          )}
 
           {sesionIniciada ? (
             <>
-              <button type="button" onClick={irAMiCuenta} className="cuenta-encabezado">
+              <button
+                type="button"
+                onClick={irAMiCuenta}
+                className="cuenta-encabezado"
+              >
                 <img
                   src={obtenerUrlFotoUsuario(fotoUsuario)}
                   alt=""
@@ -396,6 +467,7 @@ function IniPagina() {
                 />
                 <span>{nombreUsuario || "Mi cuenta"}</span>
               </button>
+
               <button type="button" onClick={cerrarSesion}>
                 Cerrar sesión
               </button>
@@ -419,13 +491,16 @@ function IniPagina() {
           <p className="etiqueta">
             <Leaf size={16} /> COMUNIDAD · LECTURA · REUTILIZACIÓN
           </p>
+
           <h1>
             Dale una nueva vida <span>a tus libros.</span>
           </h1>
+
           <p className="hero-descripcion">
             Intercambia, regala y encuentra libros usados cerca de ti. Una
             comunidad para compartir historias, ahorrar y ayudar al planeta.
           </p>
+
           <div className="hero-acciones">
             <button
               className="boton primario grande"
@@ -434,6 +509,7 @@ function IniPagina() {
             >
               Explorar libros <ArrowRight size={19} />
             </button>
+
             <button
               className="boton secundario grande"
               type="button"
@@ -442,16 +518,27 @@ function IniPagina() {
               <Upload size={19} /> Publicar un libro
             </button>
           </div>
+
           <div className="hero-valores">
-            <span><Leaf size={17} /> Economía circular</span>
-            <span><UsersRound size={17} /> Comunidad</span>
-            <span><BookOpen size={17} /> Lectura</span>
+            <span>
+              <Leaf size={17} /> Economía circular
+            </span>
+
+            <span>
+              <UsersRound size={17} /> Comunidad
+            </span>
+
+            <span>
+              <BookOpen size={17} /> Lectura
+            </span>
           </div>
         </div>
+
         <div className="hero-ilustracion" aria-hidden="true">
           <span className="flor flor-uno">✦</span>
           <span className="flor flor-dos">✿</span>
           <span className="flor flor-tres">✦</span>
+
           <div className="pila-libros">
             <div className="libro libro-verde">Cuentos</div>
             <div className="libro libro-amarillo">Historias</div>
@@ -470,8 +557,10 @@ function IniPagina() {
           }}
         >
           <label htmlFor="buscar-libro">¿Qué libro estás buscando?</label>
+
           <div className="buscador-campo">
             <Search size={22} />
+
             <input
               id="buscar-libro"
               value={busqueda}
@@ -479,17 +568,21 @@ function IniPagina() {
               placeholder="Busca por título o autor..."
               type="search"
             />
+
             <button className="boton primario" type="submit">
               Buscar
             </button>
           </div>
+
           <div className="filtros-rapidos">
             <strong>Filtros rápidos:</strong>
+
             {categorias.map((categoria) => (
               <button
                 key={categoria}
-                className={`filtro ${categoriaSeleccionada === categoria ? "seleccionado" : ""
-                  }`}
+                className={`filtro ${
+                  categoriaSeleccionada === categoria ? "seleccionado" : ""
+                }`}
                 type="button"
                 onClick={() => {
                   setCategoriaSeleccionada(categoria);
@@ -500,6 +593,7 @@ function IniPagina() {
                   categoria === "Infantil" ||
                   categoria === "Ciencia" ||
                   categoria === "Tecnología") && <BookOpen size={15} />}
+
                 {categoria}
               </button>
             ))}
@@ -517,6 +611,7 @@ function IniPagina() {
               intercambiar historias cerca de ti.
             </p>
           </div>
+
           <button
             className="enlace-ver-todos"
             type="button"
@@ -532,6 +627,7 @@ function IniPagina() {
         {estaCargandoLibros && (
           <div className="mensaje-estado">Cargando libros publicados...</div>
         )}
+
         {errorLibros && (
           <div className="mensaje-estado error">{errorLibros}</div>
         )}
@@ -543,6 +639,7 @@ function IniPagina() {
               <BookOpen size={45} />
               <h3>No encontramos libros con esa búsqueda</h3>
               <p>Prueba con otro título, autor o categoría.</p>
+
               <button
                 className="boton primario"
                 type="button"
@@ -565,36 +662,48 @@ function IniPagina() {
                   <article className="tarjeta-libro" key={libro.id}>
                     <div className="imagen-libro">
                       {urlImagen ? (
-                        <img src={urlImagen} alt={`Portada de ${libro.titulo}`} />
+                        <img
+                          src={urlImagen}
+                          alt={`Portada de ${libro.titulo}`}
+                        />
                       ) : (
                         <div className="portada-sin-imagen">
                           <span>📚</span>
                           <strong>{libro.titulo}</strong>
                         </div>
                       )}
+
                       <span
-                        className={`insignia ${libro.modalidad === "REGALO" ? "regalo" : "intercambio"
-                          }`}
+                        className={`insignia ${
+                          libro.modalidad === "REGALO"
+                            ? "regalo"
+                            : "intercambio"
+                        }`}
                       >
                         {libro.modalidad === "REGALO" ? (
                           <Gift size={14} />
                         ) : (
                           <span>↔</span>
                         )}
+
                         {modalidad}
                       </span>
                     </div>
+
                     <div className="tarjeta-contenido">
                       <p className="categoria">{nombreCategoria}</p>
                       <h3>{libro.titulo}</h3>
                       <p className="autor">{libro.autor}</p>
+
                       <p className="ubicacion">
                         <MapPin size={15} />
                         {libro.ciudad}, {libro.estado}
                       </p>
+
                       <div className="tarjeta-pie">
                         <span>{libro.condicion}</span>
                       </div>
+
                       <button
                         className="boton primario boton-contactar"
                         type="button"
@@ -621,24 +730,35 @@ function IniPagina() {
             </p>
           </div>
         </div>
+
         <div className="pasos">
           <article className="paso">
             <span className="numero-paso">1</span>
             <Upload size={28} />
             <h3>Publica</h3>
-            <p>Sube fotos y agrega la información de un libro que ya no utilizas.</p>
+            <p>
+              Sube fotos y agrega la información de un libro que ya no
+              utilizas.
+            </p>
           </article>
+
           <article className="paso">
             <span className="numero-paso">2</span>
             <Search size={28} />
             <h3>Encuentra</h3>
-            <p>Busca libros que quieras leer, recibir como regalo o intercambiar.</p>
+            <p>
+              Busca libros que quieras leer, recibir como regalo o intercambiar.
+            </p>
           </article>
+
           <article className="paso">
             <span className="numero-paso">3</span>
             <HeartHandshake size={28} />
             <h3>Comparte</h3>
-            <p>Contacta a la persona y acuerden un lugar y horario para la entrega.</p>
+            <p>
+              Contacta a la persona y acuerden un lugar y horario para la
+              entrega.
+            </p>
           </article>
         </div>
       </section>
@@ -648,34 +768,43 @@ function IniPagina() {
           <p className="etiqueta">
             <Leaf size={16} /> NUESTRO IMPACTO
           </p>
+
           <h2>Un libro compartido puede abrir muchas historias.</h2>
+
           <p>
             LibroLibre busca convertir los libros que ya no utilizas en nuevas
             oportunidades de lectura, comunidad y reutilización.
           </p>
+
           <button
             className="boton secundario"
             type="button"
             onClick={() =>
-              mostrarMensaje("Después construiremos la página completa de Impacto.")
+              mostrarMensaje(
+                "Después construiremos la página completa de Impacto."
+              )
             }
           >
             Conoce nuestro impacto <ArrowRight size={18} />
           </button>
         </div>
+
         <div className="estadisticas">
           <div>
             <strong>{formatoNumero(estadisticas.librosReutilizados)}</strong>
             <span>Libros reutilizados</span>
           </div>
+
           <div>
             <strong>{formatoNumero(estadisticas.usuariosEnComunidad)}</strong>
             <span>Usuarios en comunidad</span>
           </div>
+
           <div>
             <strong>{formatoNumero(estadisticas.intercambiosRealizados)}</strong>
             <span>Intercambios realizados</span>
           </div>
+
           <div>
             <strong>{formatoNumero(estadisticas.librosRegalados)}</strong>
             <span>Libros regalados</span>
@@ -686,22 +815,49 @@ function IniPagina() {
       <section className="seccion-comunidad">
         <div>
           <HeartHandshake size={32} />
-          <h2>No se trata de acumular libros. Se trata de hacerlos circular.</h2>
-          <p>Una red digital para transformar libros usados en oportunidades de lectura para otras personas.</p>
+          <h2>
+            No se trata de acumular libros. Se trata de hacerlos circular.
+          </h2>
+          <p>
+            Una red digital para transformar libros usados en oportunidades de
+            lectura para otras personas.
+          </p>
         </div>
-        <button className="boton primario" type="button" onClick={irAPublicarLibro}>
+
+        <button
+          className="boton primario"
+          type="button"
+          onClick={irAPublicarLibro}
+        >
           Únete a la comunidad
         </button>
       </section>
 
       <footer className="pie-pagina">
-        <div><BookOpen size={25} /><strong>LibroLibre</strong></div>
-        <p>Una comunidad para regalar, intercambiar y dar una nueva vida a los libros que ya no utilizas.</p>
-        <div className="pie-enlaces">
-          <button type="button" onClick={() => irASeccion("explorar")}>Libros disponibles</button>
-          <button type="button" onClick={() => irASeccion("como-funciona")}>Cómo funciona</button>
-          <button type="button" onClick={irAPublicarLibro}>Publicar un libro</button>
+        <div>
+          <BookOpen size={25} />
+          <strong>LibroLibre</strong>
         </div>
+
+        <p>
+          Una comunidad para regalar, intercambiar y dar una nueva vida a los
+          libros que ya no utilizas.
+        </p>
+
+        <div className="pie-enlaces">
+          <button type="button" onClick={() => irASeccion("explorar")}>
+            Libros disponibles
+          </button>
+
+          <button type="button" onClick={() => irASeccion("como-funciona")}>
+            Cómo funciona
+          </button>
+
+          <button type="button" onClick={irAPublicarLibro}>
+            Publicar un libro
+          </button>
+        </div>
+
         <small>© 2026 LibroLibre. Comparte, lee y reutiliza.</small>
       </footer>
     </main>

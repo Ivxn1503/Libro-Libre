@@ -712,3 +712,224 @@
 .pie-pagina small {
   color: rgba(255, 255, 255, 0.7);
 }
+
+
+/* Botón de funciones de administrador */
+.navegacion .boton-admin-inicio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  min-height: 72px;
+  padding: 1.2rem 2rem;
+
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #287c35;
+  background: #eaf5e8;
+  border: 1px solid #d6ead3;
+  border-radius: 16px;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navegacion .boton-admin-inicio svg {
+  width: 30px;
+  height: 30px;
+}
+
+.navegacion .boton-admin-inicio:hover {
+  background: #dcefd9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(40, 124, 53, 0.12);
+}
+
+@media (max-width: 650px) {
+  .navegacion .boton-admin-inicio {
+    font-size: 1.1rem;
+    min-height: 56px;
+    padding: 0.9rem 1.2rem;
+  }
+}
+
+
+/* AVISO DE CUENTA BLOQUEADA */
+
+.revision-aviso {
+  margin: 16px 0;
+  padding: 18px;
+  background: #fff8ed;
+  border: 1px solid #e7c99a;
+  border-radius: 14px;
+}
+
+.revision-aviso-titulo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8b541d;
+  font-size: 1.05rem;
+}
+
+.revision-aviso p {
+  margin: 10px 0 15px;
+  color: #66503b;
+  line-height: 1.6;
+}
+
+.revision-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: #2f7d39;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.revision-boton:hover:not(:disabled) {
+  background: #245e2c;
+}
+
+.revision-boton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* VENTANA EMERGENTE */
+
+.revision-modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 30, 20, 0.65);
+}
+
+.revision-modal {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.revision-cerrar {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: #66736b;
+  cursor: pointer;
+}
+
+.revision-modal-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  background: #e6f3e8;
+  color: #2f7d39;
+  border-radius: 16px;
+}
+
+.revision-modal h2 {
+  margin-bottom: 12px;
+  color: #26352f;
+  font-size: 1.5rem;
+}
+
+.revision-modal p {
+  color: #65736a;
+  line-height: 1.6;
+}
+
+.revision-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.revision-formulario label {
+  font-weight: 700;
+  color: #26352f;
+}
+
+.revision-formulario input,
+.revision-formulario textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 15px;
+  border: 1px solid #d4ded6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #26352f;
+  font: inherit;
+}
+
+.revision-formulario input[readonly] {
+  background: #f4f7f4;
+}
+
+.revision-formulario textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.revision-formulario input:focus,
+.revision-formulario textarea:focus {
+  outline: 2px solid #8cbd91;
+  border-color: #2f7d39;
+}
+
+.revision-formulario small {
+  align-self: flex-end;
+  color: #758178;
+}
+
+.revision-exito {
+  text-align: center;
+}
+
+.revision-exito > svg {
+  color: #2f7d39;
+  margin-bottom: 15px;
+}
+
+.revision-exito .revision-boton {
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .revision-modal {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .revision-modal h2 {
+    font-size: 1.3rem;
+  }
+}

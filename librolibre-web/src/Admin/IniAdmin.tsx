@@ -1,30 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { URL_API } from "../config";
 
+import "../Estilos/IniAdmin.css";
+
 import {
-  BookOpen,
-  Users,
-  Gift,
-  ArrowLeftRight,
-  Search,
-  Trash2,
-  UserPlus,
-  ShieldCheck,
-  Ban,
-  CheckCircle,
-  X,
-  LogOut,
+  BookOpen, Users, Gift, ArrowLeftRight, Search, Trash2,
+  UserPlus, ShieldCheck, Ban, CheckCircle, X, LogOut,
+  EyeOff, Eye, RefreshCw, AlertCircle,
 } from "lucide-react";
+
+type Rol = "USUARIO" | "ADMINISTRADOR";
+type EstadoUsuario = "ACTIVO" | "INACTIVO" | "BLOQUEADO";
+type EstadoLibro = "DISPONIBLE" | "RESERVADO" | "ENTREGADO" | "OCULTO" | "ELIMINADO";
+type Seccion = "inicio" | "usuarios" | "libros";
 
 type Usuario = {
   id: number;
-  nombre?: string;
-  nombres?: string;
-  apellidos?: string;
+  nombre: string;
   correo: string;
-  rol?: string;
-  activo?: boolean;
+  rol: Rol;
+  estatus: EstadoUsuario;
+  creadoEn?: string;
 };
 
 type Libro = {
@@ -32,883 +29,415 @@ type Libro = {
   titulo: string;
   autor: string;
   modalidad: "REGALO" | "INTERCAMBIO";
-  estatus: string;
+  estatus: EstadoLibro;
+  usuario?: { id: number; nombre: string; correo: string };
 };
 
-type EstadisticasAdmin = {
-  usuarios: number;
-  libros: number;
-  intercambios: number;
-  regalos: number;
+type NuevoUsuario = {
+  nombre: string;
+  correo: string;
+  password: string;
+  rol: Rol;
 };
 
+const usuarioInicial: NuevoUsuario = {
+  nombre: "", correo: "", password: "", rol: "USUARIO",
+};
+
+function mensajeError(error: unknown): string {
+  return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
+}
 
 function IniAdmin() {
   const navegar = useNavigate();
-
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [libros, setLibros] = useState<Libro[]>([]);
-
-  const [estadisticas, setEstadisticas] =
-    useState<EstadisticasAdmin>({
-      usuarios: 0,
-      libros: 0,
-      intercambios: 0,
-      regalos: 0,
-    });
-
-  const [seccionActiva, setSeccionActiva] = useState<
-    "inicio" | "usuarios" | "libros"
-  >("inicio");
-
+  const [seccionActiva, setSeccionActiva] = useState<Seccion>("inicio");
   const [busquedaUsuario, setBusquedaUsuario] = useState("");
   const [busquedaLibro, setBusquedaLibro] = useState("");
+  const [mostrarFormularioUsuario, setMostrarFormularioUsuario] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+  const [nuevoUsuario, setNuevoUsuario] = useState<NuevoUsuario>(usuarioInicial);
+  const [miId, setMiId] = useState<number | null>(null);
+  const [autorizado, setAutorizado] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
+  const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
 
-  const [mostrarFormularioUsuario, setMostrarFormularioUsuario] =
-    useState(false);
+  const obtenerHeaders = useCallback((): HeadersInit => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+  }), []);
 
-  const [usuarioSeleccionado, setUsuarioSeleccionado] =
-    useState<Usuario | null>(null);
-
-  const [mostrarConfirmacion, setMostrarConfirmacion] =
-    useState(false);
-
-  const [cargando, setCargando] = useState(false);
-
-  const [nuevoUsuario, setNuevoUsuario] = useState({
-    nombre: "",
-    correo: "",
-    password: "",
-    rol: "USUARIO",
-  });
-
-  /*
-   * Verificar sesión y permisos
-   */
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const usuarioGuardado = localStorage.getItem("usuario");
-
-    if (!token || !usuarioGuardado) {
-      navegar("/iniciar-sesion");
-      return;
-    }
-
-    try {
-      const usuario = JSON.parse(usuarioGuardado);
-
-      /*
-       * IMPORTANTE:
-       * Aquí asumimos que tu usuario tiene una propiedad "rol".
-       * Si en tu backend se llama diferente, la cambiamos.
-       */
-      if (usuario.rol !== "ADMIN") {
-        navegar("/");
+  const solicitar = useCallback(async (ruta: string, opciones: RequestInit = {}) => {
+    const respuesta = await fetch(`${URL_API}${ruta}`, {
+      ...opciones,
+      headers: { ...obtenerHeaders(), ...opciones.headers },
+    });
+    const datos: unknown = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) {
+      const mensaje = typeof datos === "object" && datos !== null &&
+        "mensaje" in datos && typeof datos.mensaje === "string"
+        ? datos.mensaje : `Error HTTP ${respuesta.status}`;
+      const fallo = new Error(mensaje);
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        // La API es quien decide si la sesión sigue autorizada.
+        if (respuesta.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("usuario");
+          navegar("/iniciar-sesion", { replace: true });
+        } else {
+          navegar("/", { replace: true });
+        }
       }
-    } catch (error) {
-      console.error("No se pudo comprobar el usuario:", error);
-      navegar("/iniciar-sesion");
+      throw fallo;
     }
-  }, [navegar]);
+    return datos;
+  }, [navegar, obtenerHeaders]);
 
-  /*
-   * Cargar información administrativa
-   */
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const obtenerHeaders = () => {
-    const token = localStorage.getItem("token");
-
-    return {
-      "Content-Type": "application/json",
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
-    };
-  };
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
+    setCargando(true);
+    setError("");
     try {
-      setCargando(true);
-
       const [respuestaUsuarios, respuestaLibros] = await Promise.all([
-        fetch(`${URL_API}/api/admin/usuarios`, {
-          headers: obtenerHeaders(),
-        }),
-
-        fetch(`${URL_API}/api/admin/libros`, {
-          headers: obtenerHeaders(),
-        }),
+        solicitar("/api/admin/usuarios"),
+        solicitar("/api/admin/libros"),
       ]);
-
-      if (!respuestaUsuarios.ok) {
-        throw new Error("No se pudieron obtener los usuarios.");
+      const listaUsuarios = (respuestaUsuarios as { usuarios?: Usuario[] }).usuarios;
+      const listaLibros = (respuestaLibros as { libros?: Libro[] }).libros;
+      if (!Array.isArray(listaUsuarios) || !Array.isArray(listaLibros)) {
+        throw new Error("La API devolvió un formato de datos inesperado.");
       }
-
-      if (!respuestaLibros.ok) {
-        throw new Error("No se pudieron obtener los libros.");
-      }
-
-      const datosUsuarios = await respuestaUsuarios.json();
-      const datosLibros = await respuestaLibros.json();
-
-      setUsuarios(datosUsuarios.usuarios ?? datosUsuarios ?? []);
-      setLibros(datosLibros.libros ?? datosLibros ?? []);
-
-      calcularEstadisticas(
-        datosUsuarios.usuarios ?? datosUsuarios ?? [],
-        datosLibros.libros ?? datosLibros ?? [],
-      );
-    } catch (error) {
-      console.error("Error al cargar información administrativa:", error);
+      setUsuarios(listaUsuarios);
+      setLibros(listaLibros);
+      setAutorizado(true);
+    } catch (fallo) {
+      setError(mensajeError(fallo));
     } finally {
       setCargando(false);
     }
-  };
+  }, [solicitar]);
 
-  /*
-   * Estadísticas
-   */
-  const calcularEstadisticas = (
-    listaUsuarios: Usuario[],
-    listaLibros: Libro[],
-  ) => {
-    const intercambios = listaLibros.filter(
-      (libro) => libro.modalidad === "INTERCAMBIO",
-    ).length;
-
-    const regalos = listaLibros.filter(
-      (libro) => libro.modalidad === "REGALO",
-    ).length;
-
-    setEstadisticas({
-      usuarios: listaUsuarios.length,
-      libros: listaLibros.length,
-      intercambios,
-      regalos,
-    });
-  };
-
-  /*
-   * Crear usuario
-   */
-  const crearUsuario = async () => {
-    if (
-      !nuevoUsuario.nombre ||
-      !nuevoUsuario.correo ||
-      !nuevoUsuario.password
-    ) {
-      alert("Completa todos los campos.");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const usuarioGuardado = localStorage.getItem("usuario");
+    if (!token || !usuarioGuardado) {
+      navegar("/iniciar-sesion", { replace: true });
       return;
     }
-
     try {
-      const respuesta = await fetch(
-        `${URL_API}/api/admin/usuarios`,
-        {
-          method: "POST",
-          headers: obtenerHeaders(),
-          body: JSON.stringify(nuevoUsuario),
-        },
-      );
-
-      const datos = await respuesta.json();
-
-      if (!respuesta.ok) {
-        throw new Error(
-          datos.mensaje || "No se pudo crear el usuario.",
-        );
+      const usuario: unknown = JSON.parse(usuarioGuardado);
+      if (!usuario || typeof usuario !== "object" || !("rol" in usuario) ||
+          usuario.rol !== "ADMINISTRADOR") {
+        navegar("/", { replace: true });
+        return;
       }
+      if ("id" in usuario && typeof usuario.id === "number") setMiId(usuario.id);
+      void cargarDatos();
+    } catch {
+      navegar("/iniciar-sesion", { replace: true });
+    }
+  }, [cargarDatos, navegar]);
 
-      alert("Usuario creado correctamente.");
+  const estadisticas = useMemo(() => ({
+    usuarios: usuarios.length,
+    libros: libros.filter((libro) => libro.estatus !== "ELIMINADO").length,
+    intercambios: libros.filter((libro) => libro.modalidad === "INTERCAMBIO" && libro.estatus !== "ELIMINADO").length,
+    regalos: libros.filter((libro) => libro.modalidad === "REGALO" && libro.estatus !== "ELIMINADO").length,
+  }), [usuarios, libros]);
 
-      setNuevoUsuario({
-        nombre: "",
-        correo: "",
-        password: "",
-        rol: "USUARIO",
+  const usuariosFiltrados = useMemo(() => {
+    const texto = busquedaUsuario.trim().toLocaleLowerCase();
+    return usuarios.filter((usuario) =>
+      usuario.nombre.toLocaleLowerCase().includes(texto) ||
+      usuario.correo.toLocaleLowerCase().includes(texto));
+  }, [usuarios, busquedaUsuario]);
+
+  const librosFiltrados = useMemo(() => {
+    const texto = busquedaLibro.trim().toLocaleLowerCase();
+    return libros.filter((libro) =>
+      libro.titulo.toLocaleLowerCase().includes(texto) ||
+      libro.autor.toLocaleLowerCase().includes(texto));
+  }, [libros, busquedaLibro]);
+
+  const ejecutar = async (accion: () => Promise<void>, exito: string) => {
+    setProcesando(true);
+    setError("");
+    setAviso("");
+    try {
+      await accion();
+      setAviso(exito);
+      await cargarDatos();
+    } catch (fallo) {
+      setError(mensajeError(fallo));
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const crearUsuario = async () => {
+    if (!nuevoUsuario.nombre.trim() || !nuevoUsuario.correo.trim() || nuevoUsuario.password.length < 8) {
+      setError("Escribe nombre, correo y una contraseña de al menos 8 caracteres.");
+      return;
+    }
+    await ejecutar(async () => {
+      await solicitar("/api/admin/usuarios", {
+        method: "POST", body: JSON.stringify(nuevoUsuario),
       });
-
+      setNuevoUsuario(usuarioInicial);
       setMostrarFormularioUsuario(false);
-
-      cargarDatos();
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear el usuario.",
-      );
-    }
+    }, "Usuario creado correctamente.");
   };
 
-  /*
-   * Eliminar usuario
-   */
+  const cambiarEstadoUsuario = async (usuario: Usuario) => {
+    if (usuario.rol === "ADMINISTRADOR" || usuario.id === miId) return;
+    const estatus: EstadoUsuario = usuario.estatus === "ACTIVO" ? "BLOQUEADO" : "ACTIVO";
+    if (!window.confirm(`¿Quieres ${estatus === "BLOQUEADO" ? "bloquear" : "activar"} a ${usuario.nombre}?`)) return;
+    await ejecutar(async () => {
+      await solicitar(`/api/admin/usuarios/${usuario.id}/estatus`, {
+        method: "PATCH", body: JSON.stringify({ estatus }),
+      });
+    }, `Estado de ${usuario.nombre} actualizado.`);
+  };
+
   const eliminarUsuario = async () => {
-    if (!usuarioSeleccionado) return;
-
-    try {
-      const respuesta = await fetch(
-        `${URL_API}/api/admin/usuarios/${usuarioSeleccionado.id}`,
-        {
-          method: "DELETE",
-          headers: obtenerHeaders(),
-        },
-      );
-
-      if (!respuesta.ok) {
-        throw new Error("No se pudo eliminar el usuario.");
-      }
-
-      alert("Usuario eliminado correctamente.");
-
+    if (!usuarioSeleccionado || usuarioSeleccionado.rol === "ADMINISTRADOR" || usuarioSeleccionado.id === miId) return;
+    await ejecutar(async () => {
+      await solicitar(`/api/admin/usuarios/${usuarioSeleccionado.id}`, { method: "DELETE" });
       setUsuarioSeleccionado(null);
-      setMostrarConfirmacion(false);
-
-      cargarDatos();
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el usuario.",
-      );
-    }
+    }, "Usuario eliminado correctamente.");
   };
 
-  /*
-   * Eliminar libro
-   */
-  const eliminarLibro = async (id: number) => {
-    const confirmar = window.confirm(
-      "¿Seguro que quieres eliminar este libro?",
-    );
-
-    if (!confirmar) return;
-
-    try {
-      const respuesta = await fetch(
-        `${URL_API}/api/admin/libros/${id}`,
-        {
-          method: "DELETE",
-          headers: obtenerHeaders(),
-        },
-      );
-
-      if (!respuesta.ok) {
-        throw new Error("No se pudo eliminar el libro.");
-      }
-
-      alert("Libro eliminado correctamente.");
-
-      cargarDatos();
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        error instanceof Error
-          ? error.message
-          : "No se pudo eliminar el libro.",
-      );
-    }
+  const cambiarEstadoLibro = async (libro: Libro) => {
+    const estatus: EstadoLibro = libro.estatus === "OCULTO" ? "DISPONIBLE" : "OCULTO";
+    if (!window.confirm(`¿Quieres ${estatus === "OCULTO" ? "ocultar" : "restaurar"} «${libro.titulo}»?`)) return;
+    await ejecutar(async () => {
+      await solicitar(`/api/admin/libros/${libro.id}/estatus`, {
+        method: "PATCH", body: JSON.stringify({ estatus }),
+      });
+    }, "Estado de la publicación actualizado.");
   };
 
-  /*
-   * Cerrar sesión
-   */
+  const eliminarLibro = async (libro: Libro) => {
+    if (!window.confirm(`¿Marcar «${libro.titulo}» como eliminado?`)) return;
+    await ejecutar(async () => {
+      await solicitar(`/api/admin/libros/${libro.id}`, { method: "DELETE" });
+    }, "Publicación marcada como eliminada.");
+  };
+
   const cerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
-
     navegar("/");
   };
 
-  /*
-   * Filtrar usuarios
-   */
-  const usuariosFiltrados = useMemo(() => {
-    const texto = busquedaUsuario.trim().toLowerCase();
-
-    if (!texto) return usuarios;
-
-    return usuarios.filter((usuario) => {
-      const nombre = `${usuario.nombre ?? ""} ${
-        usuario.apellidos ?? ""
-      }`.toLowerCase();
-
-      return (
-        nombre.includes(texto) ||
-        usuario.correo.toLowerCase().includes(texto)
-      );
-    });
-  }, [usuarios, busquedaUsuario]);
-
-  /*
-   * Filtrar libros
-   */
-  const librosFiltrados = useMemo(() => {
-    const texto = busquedaLibro.trim().toLowerCase();
-
-    if (!texto) return libros;
-
-    return libros.filter(
-      (libro) =>
-        libro.titulo.toLowerCase().includes(texto) ||
-        libro.autor.toLowerCase().includes(texto),
+  if (!autorizado) {
+    return (
+      <main className="pagina admin-pagina">
+        <section className="admin-contenido">
+          <h1>Panel de administración</h1>
+          {cargando ? <p>Verificando permisos y cargando información...</p> : (
+            <>
+              <p role="alert">{error || "No se pudo acceder al panel."}</p>
+              <button className="boton secundario" onClick={() => void cargarDatos()}>Reintentar</button>
+              <button className="boton secundario" onClick={() => navegar("/")}>Volver al inicio</button>
+            </>
+          )}
+        </section>
+      </main>
     );
-  }, [libros, busquedaLibro]);
+  }
 
   return (
     <main className="pagina admin-pagina">
-      {/* HEADER */}
-
       <header className="encabezado admin-encabezado">
-        <button
-          className="marca"
-          type="button"
-          onClick={() => setSeccionActiva("inicio")}
-        >
-          LibroLibre
-        </button>
-
-        <div className="admin-titulo">
-          <ShieldCheck size={20} />
-          <span>Panel de administración</span>
-        </div>
-
+        <button className="marca" type="button" onClick={() => setSeccionActiva("inicio")}>LibroLibre</button>
+        <div className="admin-titulo"><ShieldCheck size={20} /><span>Panel de administración</span></div>
         <div className="acciones-encabezado">
-          <button
-            className="boton secundario"
-            type="button"
-            onClick={() => navegar("/")}
-          >
-            <ArrowLeftRight size={17} />
-            Volver a LibroLibre
+          <button className="boton secundario" type="button" onClick={() => navegar("/")}>
+            <ArrowLeftRight size={17} /> Volver a LibroLibre
           </button>
-
-          <button
-            className="boton primario"
-            type="button"
-            onClick={cerrarSesion}
-          >
-            <LogOut size={17} />
-            Cerrar sesión
+          <button className="boton primario" type="button" onClick={cerrarSesion}>
+            <LogOut size={17} /> Cerrar sesión
           </button>
         </div>
       </header>
-
-      {/* CONTENIDO */}
 
       <section className="admin-contenido">
         <div className="admin-bienvenida">
           <div>
             <p className="etiqueta">ADMINISTRACIÓN</p>
-
-            <h1>
-              Panel de control de <span>LibroLibre</span>
-            </h1>
-
-            <p>
-              Administra usuarios, publicaciones y actividad de la
-              comunidad.
-            </p>
+            <h1>Panel de control de <span>LibroLibre</span></h1>
+            <p>Administra usuarios, publicaciones y actividad de la comunidad.</p>
           </div>
         </div>
 
-        {/* ESTADÍSTICAS */}
+        {error && <p role="alert" style={{ color: "#b42318" }}><AlertCircle size={16} /> {error}</p>}
+        {aviso && <p role="status" style={{ color: "#167044" }}>{aviso}</p>}
 
         <div className="admin-estadisticas">
-          <article className="admin-estadistica">
-            <Users size={25} />
-
-            <div>
-              <strong>
-                {cargando ? "—" : estadisticas.usuarios}
-              </strong>
-
-              <span>Usuarios</span>
-            </div>
-          </article>
-
-          <article className="admin-estadistica">
-            <BookOpen size={25} />
-
-            <div>
-              <strong>
-                {cargando ? "—" : estadisticas.libros}
-              </strong>
-
-              <span>Libros publicados</span>
-            </div>
-          </article>
-
-          <article className="admin-estadistica">
-            <ArrowLeftRight size={25} />
-
-            <div>
-              <strong>
-                {cargando ? "—" : estadisticas.intercambios}
-              </strong>
-
-              <span>Intercambios</span>
-            </div>
-          </article>
-
-          <article className="admin-estadistica">
-            <Gift size={25} />
-
-            <div>
-              <strong>
-                {cargando ? "—" : estadisticas.regalos}
-              </strong>
-
-              <span>Regalos</span>
-            </div>
-          </article>
+          {([
+            { icono: Users, numero: estadisticas.usuarios, texto: "Usuarios" },
+            { icono: BookOpen, numero: estadisticas.libros, texto: "Libros publicados" },
+            { icono: ArrowLeftRight, numero: estadisticas.intercambios, texto: "Publicaciones de intercambio" },
+            { icono: Gift, numero: estadisticas.regalos, texto: "Publicaciones de regalo" },
+          ]).map(({ icono: Icono, numero, texto }) => (
+            <article className="admin-estadistica" key={texto}>
+              <Icono size={25} /><div><strong>{cargando ? "—" : numero}</strong><span>{texto}</span></div>
+            </article>
+          ))}
         </div>
-
-        {/* MENÚ */}
 
         <div className="admin-menu">
-          <button
-            className={
-              seccionActiva === "inicio" ? "activo" : ""
-            }
-            onClick={() => setSeccionActiva("inicio")}
-          >
-            <ShieldCheck size={18} />
-            Resumen
-          </button>
-
-          <button
-            className={
-              seccionActiva === "usuarios" ? "activo" : ""
-            }
-            onClick={() => setSeccionActiva("usuarios")}
-          >
-            <Users size={18} />
-            Usuarios
-          </button>
-
-          <button
-            className={
-              seccionActiva === "libros" ? "activo" : ""
-            }
-            onClick={() => setSeccionActiva("libros")}
-          >
-            <BookOpen size={18} />
-            Libros
+          {([
+            { id: "inicio", texto: "Resumen", icono: ShieldCheck },
+            { id: "usuarios", texto: "Usuarios", icono: Users },
+            { id: "libros", texto: "Libros", icono: BookOpen },
+          ] as const).map(({ id, texto, icono: Icono }) => (
+            <button key={id} type="button" className={seccionActiva === id ? "activo" : ""}
+              onClick={() => setSeccionActiva(id)}><Icono size={18} /> {texto}</button>
+          ))}
+          <button type="button" onClick={() => void cargarDatos()} disabled={cargando || procesando}>
+            <RefreshCw size={18} /> Actualizar
           </button>
         </div>
-
-        {/* RESUMEN */}
 
         {seccionActiva === "inicio" && (
           <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <p className="etiqueta">RESUMEN</p>
-                <h2>Actividad de LibroLibre</h2>
-              </div>
-            </div>
-
+            <div className="admin-panel-header"><div><p className="etiqueta">RESUMEN</p><h2>Actividad de LibroLibre</h2></div></div>
             <div className="admin-resumen-grid">
-              <button
-                className="admin-opcion"
-                onClick={() => setSeccionActiva("usuarios")}
-              >
-                <Users size={32} />
-
-                <div>
-                  <h3>Gestionar usuarios</h3>
-                  <p>
-                    Agrega, consulta y elimina cuentas de la
-                    comunidad.
-                  </p>
-                </div>
+              <button className="admin-opcion" type="button" onClick={() => setSeccionActiva("usuarios")}>
+                <Users size={32} /><div><h3>Gestionar usuarios</h3><p>Consulta, crea, bloquea y administra las cuentas de la comunidad.</p></div>
               </button>
-
-              <button
-                className="admin-opcion"
-                onClick={() => setSeccionActiva("libros")}
-              >
-                <BookOpen size={32} />
-
-                <div>
-                  <h3>Gestionar libros</h3>
-                  <p>
-                    Consulta y administra las publicaciones.
-                  </p>
-                </div>
+              <button className="admin-opcion" type="button" onClick={() => setSeccionActiva("libros")}>
+                <BookOpen size={32} /><div><h3>Gestionar libros</h3><p>Consulta, oculta, restaura y administra las publicaciones.</p></div>
               </button>
             </div>
           </section>
         )}
-
-        {/* USUARIOS */}
 
         {seccionActiva === "usuarios" && (
           <section className="admin-panel">
             <div className="admin-panel-header">
-              <div>
-                <p className="etiqueta">COMUNIDAD</p>
-                <h2>Usuarios</h2>
-                <p>
-                  Administra las cuentas registradas en
-                  LibroLibre.
-                </p>
-              </div>
-
-              <button
-                className="boton primario"
-                type="button"
-                onClick={() =>
-                  setMostrarFormularioUsuario(true)
-                }
-              >
-                <UserPlus size={18} />
-                Agregar usuario
+              <div><p className="etiqueta">COMUNIDAD</p><h2>Usuarios</h2><p>Administra las cuentas registradas en LibroLibre.</p></div>
+              <button className="boton primario" type="button" onClick={() => setMostrarFormularioUsuario(true)}>
+                <UserPlus size={18} /> Agregar usuario
               </button>
             </div>
-
-            <div className="admin-buscador">
-              <Search size={20} />
-
-              <input
-                type="search"
-                placeholder="Buscar por nombre o correo..."
-                value={busquedaUsuario}
-                onChange={(evento) =>
-                  setBusquedaUsuario(evento.target.value)
-                }
-              />
+            <div className="admin-buscador"><Search size={20} />
+              <input type="search" aria-label="Buscar usuarios" placeholder="Buscar por nombre o correo..."
+                value={busquedaUsuario} onChange={(evento) => setBusquedaUsuario(evento.target.value)} />
             </div>
-
             <div className="tabla-contenedor">
               <table className="tabla-admin">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                <thead><tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>{usuariosFiltrados.map((usuario) => (
+                  <tr key={usuario.id}>
+                    <td>#{usuario.id}</td><td><strong>{usuario.nombre}</strong></td><td>{usuario.correo}</td>
+                    <td><span className="admin-etiqueta">{usuario.rol}</span></td>
+                    <td>{usuario.estatus === "ACTIVO" ?
+                      <span className="estado-activo"><CheckCircle size={15} /> Activo</span> :
+                      <span className="estado-inactivo"><Ban size={15} /> {usuario.estatus === "BLOQUEADO" ? "Bloqueado" : "Inactivo"}</span>}
+                    </td>
+                    <td>
+                      {usuario.rol !== "ADMINISTRADOR" && usuario.id !== miId && (
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button className="boton-icono" type="button" disabled={procesando}
+                            title={usuario.estatus === "ACTIVO" ? "Bloquear usuario" : "Activar usuario"}
+                            aria-label={usuario.estatus === "ACTIVO" ? "Bloquear usuario" : "Activar usuario"}
+                            onClick={() => void cambiarEstadoUsuario(usuario)}>
+                            {usuario.estatus === "ACTIVO" ? <Ban size={18} /> : <CheckCircle size={18} />}
+                          </button>
+                          <button className="boton-icono peligro" type="button" disabled={procesando}
+                            title="Eliminar usuario" aria-label="Eliminar usuario"
+                            onClick={() => setUsuarioSeleccionado(usuario)}><Trash2 size={18} /></button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-
-                <tbody>
-                  {usuariosFiltrados.map((usuario) => (
-                    <tr key={usuario.id}>
-                      <td>#{usuario.id}</td>
-
-                      <td>
-                        <strong>
-                          {usuario.nombre ??
-                            usuario.nombres ??
-                            "Sin nombre"}
-                        </strong>
-                      </td>
-
-                      <td>{usuario.correo}</td>
-
-                      <td>
-                        <span className="admin-etiqueta">
-                          {usuario.rol ?? "USUARIO"}
-                        </span>
-                      </td>
-
-                      <td>
-                        {usuario.activo === false ? (
-                          <span className="estado-inactivo">
-                            <Ban size={15} />
-                            Inactivo
-                          </span>
-                        ) : (
-                          <span className="estado-activo">
-                            <CheckCircle size={15} />
-                            Activo
-                          </span>
-                        )}
-                      </td>
-
-                      <td>
-                        <button
-                          className="boton-icono peligro"
-                          type="button"
-                          title="Eliminar usuario"
-                          onClick={() => {
-                            setUsuarioSeleccionado(usuario);
-                            setMostrarConfirmacion(true);
-                          }}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                ))}</tbody>
               </table>
-
-              {usuariosFiltrados.length === 0 && (
-                <div className="estado-vacio">
-                  <Users size={40} />
-
-                  <h3>No encontramos usuarios</h3>
-
-                  <p>
-                    No hay usuarios que coincidan con tu
-                    búsqueda.
-                  </p>
-                </div>
-              )}
+              {usuariosFiltrados.length === 0 && <div className="estado-vacio"><Users size={40} /><h3>No encontramos usuarios</h3><p>No hay usuarios que coincidan con tu búsqueda.</p></div>}
             </div>
           </section>
         )}
 
-        {/* LIBROS */}
-
         {seccionActiva === "libros" && (
           <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <p className="etiqueta">PUBLICACIONES</p>
-
-                <h2>Libros</h2>
-
-                <p>
-                  Administra las publicaciones realizadas por
-                  los usuarios.
-                </p>
-              </div>
+            <div className="admin-panel-header"><div><p className="etiqueta">PUBLICACIONES</p><h2>Libros</h2><p>Administra las publicaciones realizadas por los usuarios.</p></div></div>
+            <div className="admin-buscador"><Search size={20} />
+              <input type="search" aria-label="Buscar libros" placeholder="Buscar por título o autor..."
+                value={busquedaLibro} onChange={(evento) => setBusquedaLibro(evento.target.value)} />
             </div>
-
-            <div className="admin-buscador">
-              <Search size={20} />
-
-              <input
-                type="search"
-                placeholder="Buscar por título o autor..."
-                value={busquedaLibro}
-                onChange={(evento) =>
-                  setBusquedaLibro(evento.target.value)
-                }
-              />
-            </div>
-
             <div className="tabla-contenedor">
               <table className="tabla-admin">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Título</th>
-                    <th>Autor</th>
-                    <th>Modalidad</th>
-                    <th>Estatus</th>
-                    <th>Acciones</th>
+                <thead><tr><th>ID</th><th>Título</th><th>Autor</th><th>Modalidad</th><th>Estatus</th><th>Acciones</th></tr></thead>
+                <tbody>{librosFiltrados.map((libro) => (
+                  <tr key={libro.id}>
+                    <td>#{libro.id}</td><td><strong>{libro.titulo}</strong></td><td>{libro.autor}</td>
+                    <td>{libro.modalidad === "REGALO" ? "Regalo" : "Intercambio"}</td><td>{libro.estatus}</td>
+                    <td><div style={{ display: "flex", gap: "0.5rem" }}>
+                      {libro.estatus !== "ELIMINADO" && (
+                        <>
+                          <button className="boton-icono" type="button" disabled={procesando}
+                            title={libro.estatus === "OCULTO" ? "Restaurar como disponible" : "Ocultar libro"}
+                            aria-label={libro.estatus === "OCULTO" ? "Restaurar libro" : "Ocultar libro"}
+                            onClick={() => void cambiarEstadoLibro(libro)}>
+                            {libro.estatus === "OCULTO" ? <Eye size={18} /> : <EyeOff size={18} />}
+                          </button>
+                          <button className="boton-icono peligro" type="button" disabled={procesando}
+                            title="Marcar libro como eliminado" aria-label="Eliminar libro"
+                            onClick={() => void eliminarLibro(libro)}><Trash2 size={18} /></button>
+                        </>
+                      )}
+                    </div></td>
                   </tr>
-                </thead>
-
-                <tbody>
-                  {librosFiltrados.map((libro) => (
-                    <tr key={libro.id}>
-                      <td>#{libro.id}</td>
-
-                      <td>
-                        <strong>{libro.titulo}</strong>
-                      </td>
-
-                      <td>{libro.autor}</td>
-
-                      <td>
-                        {libro.modalidad === "REGALO"
-                          ? "Regalo"
-                          : "Intercambio"}
-                      </td>
-
-                      <td>{libro.estatus}</td>
-
-                      <td>
-                        <button
-                          className="boton-icono peligro"
-                          type="button"
-                          title="Eliminar libro"
-                          onClick={() =>
-                            eliminarLibro(libro.id)
-                          }
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                ))}</tbody>
               </table>
-
-              {librosFiltrados.length === 0 && (
-                <div className="estado-vacio">
-                  <BookOpen size={40} />
-
-                  <h3>No encontramos libros</h3>
-
-                  <p>
-                    No hay publicaciones que coincidan con tu
-                    búsqueda.
-                  </p>
-                </div>
-              )}
+              {librosFiltrados.length === 0 && <div className="estado-vacio"><BookOpen size={40} /><h3>No encontramos libros</h3><p>No hay publicaciones que coincidan con tu búsqueda.</p></div>}
             </div>
           </section>
         )}
       </section>
 
-      {/* MODAL AGREGAR USUARIO */}
-
       {mostrarFormularioUsuario && (
-        <div className="modal-fondo">
-          <div className="modal-admin">
-            <button
-              className="modal-cerrar"
-              type="button"
-              onClick={() =>
-                setMostrarFormularioUsuario(false)
-              }
-            >
-              <X size={20} />
-            </button>
-
-            <p className="etiqueta">NUEVO USUARIO</p>
-
-            <h2>Agregar usuario</h2>
-
-            <div className="formulario-admin">
-              <label>
-                Nombre
-                <input
-                  type="text"
-                  value={nuevoUsuario.nombre}
-                  onChange={(evento) =>
-                    setNuevoUsuario({
-                      ...nuevoUsuario,
-                      nombre: evento.target.value,
-                    })
-                  }
-                  placeholder="Nombre del usuario"
-                />
-              </label>
-
-              <label>
-                Correo electrónico
-                <input
-                  type="email"
-                  value={nuevoUsuario.correo}
-                  onChange={(evento) =>
-                    setNuevoUsuario({
-                      ...nuevoUsuario,
-                      correo: evento.target.value,
-                    })
-                  }
-                  placeholder="correo@ejemplo.com"
-                />
-              </label>
-
-              <label>
-                Contraseña
-                <input
-                  type="password"
-                  value={nuevoUsuario.password}
-                  onChange={(evento) =>
-                    setNuevoUsuario({
-                      ...nuevoUsuario,
-                      password: evento.target.value,
-                    })
-                  }
-                  placeholder="Contraseña"
-                />
-              </label>
-
-              <label>
-                Rol
-                <select
-                  value={nuevoUsuario.rol}
-                  onChange={(evento) =>
-                    setNuevoUsuario({
-                      ...nuevoUsuario,
-                      rol: evento.target.value,
-                    })
-                  }
-                >
-                  <option value="USUARIO">Usuario</option>
-                  <option value="ADMIN">Administrador</option>
-                </select>
-              </label>
-
+        <div className="modal-fondo" role="presentation">
+          <div className="modal-admin" role="dialog" aria-modal="true" aria-labelledby="titulo-nuevo-usuario">
+            <button className="modal-cerrar" type="button" aria-label="Cerrar" onClick={() => setMostrarFormularioUsuario(false)}><X size={20} /></button>
+            <p className="etiqueta">NUEVO USUARIO</p><h2 id="titulo-nuevo-usuario">Agregar usuario</h2>
+            <form className="formulario-admin" onSubmit={(evento) => { evento.preventDefault(); void crearUsuario(); }}>
+              <label>Nombre<input type="text" required value={nuevoUsuario.nombre}
+                onChange={(evento) => setNuevoUsuario((anterior) => ({ ...anterior, nombre: evento.target.value }))}
+                placeholder="Nombre del usuario" /></label>
+              <label>Correo electrónico<input type="email" required value={nuevoUsuario.correo}
+                onChange={(evento) => setNuevoUsuario((anterior) => ({ ...anterior, correo: evento.target.value }))}
+                placeholder="correo@ejemplo.com" /></label>
+              <label>Contraseña<input type="password" minLength={8} required value={nuevoUsuario.password}
+                onChange={(evento) => setNuevoUsuario((anterior) => ({ ...anterior, password: evento.target.value }))}
+                placeholder="Mínimo 8 caracteres" /></label>
+              <label>Rol<select value={nuevoUsuario.rol}
+                onChange={(evento) => setNuevoUsuario((anterior) => ({ ...anterior, rol: evento.target.value as Rol }))}>
+                <option value="USUARIO">Usuario</option><option value="ADMINISTRADOR">Administrador</option>
+              </select></label>
               <div className="modal-botones">
-                <button
-                  type="button"
-                  className="boton secundario"
-                  onClick={() =>
-                    setMostrarFormularioUsuario(false)
-                  }
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  className="boton primario"
-                  onClick={crearUsuario}
-                >
-                  Crear usuario
-                </button>
+                <button type="button" className="boton secundario" onClick={() => setMostrarFormularioUsuario(false)}>Cancelar</button>
+                <button type="submit" className="boton primario" disabled={procesando}>{procesando ? "Creando..." : "Crear usuario"}</button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* MODAL ELIMINAR */}
-
-      {mostrarConfirmacion && usuarioSeleccionado && (
-        <div className="modal-fondo">
-          <div className="modal-confirmacion">
-            <h2>¿Eliminar usuario?</h2>
-
-            <p>
-              ¿Estás seguro de que quieres eliminar a{" "}
-              <strong>
-                {usuarioSeleccionado.nombre ??
-                  usuarioSeleccionado.nombres ??
-                  usuarioSeleccionado.correo}
-              </strong>
-              ?
-            </p>
-
+      {usuarioSeleccionado && (
+        <div className="modal-fondo" role="presentation">
+          <div className="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar-usuario">
+            <h2 id="titulo-eliminar-usuario">¿Eliminar usuario?</h2>
+            <p>¿Estás seguro de que quieres eliminar a <strong>{usuarioSeleccionado.nombre}</strong>? Sus libros asociados también podrían eliminarse de la base de datos.</p>
             <div className="modal-botones">
-              <button
-                type="button"
-                className="boton secundario"
-                onClick={() => {
-                  setMostrarConfirmacion(false);
-                  setUsuarioSeleccionado(null);
-                }}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="boton primario"
-                onClick={eliminarUsuario}
-              >
-                Sí, eliminar
+              <button type="button" className="boton secundario" onClick={() => setUsuarioSeleccionado(null)}>Cancelar</button>
+              <button type="button" className="boton primario" disabled={procesando} onClick={() => void eliminarUsuario()}>
+                {procesando ? "Eliminando..." : "Sí, eliminar"}
               </button>
             </div>
           </div>

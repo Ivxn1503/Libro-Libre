@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Navigate,
@@ -16,6 +17,10 @@ import PerfilPagina from "./Paginas/PerfilPagina.tsx";
 import EditarLibroPag from "./Paginas/EditarLibroPag";
 import NoEncontradoPagina from "./Paginas/NoEncontradoPagina";
 
+// Panel de administración
+import IniAdmin from "./Admin/IniAdmin";
+
+// Ruta para usuarios que iniciaron sesión
 function RutaProtegida({
   children,
 }: {
@@ -35,15 +40,53 @@ function RutaProtegida({
   return children;
 }
 
+// Ruta exclusiva para administradores
+function RutaAdministrador({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const token = localStorage.getItem("token");
+  const usuarioGuardado = localStorage.getItem("usuario");
+
+  if (!token || !usuarioGuardado) {
+    return (
+      <Navigate
+        to="/iniciar-sesion"
+        replace
+      />
+    );
+  }
+
+  try {
+    const usuario = JSON.parse(usuarioGuardado);
+
+    if (usuario?.rol !== "ADMINISTRADOR") {
+      return <Navigate to="/" replace />;
+    }
+  } catch {
+    return (
+      <Navigate
+        to="/iniciar-sesion"
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Página principal */}
         <Route
           path="/"
           element={<IniPagina />}
         />
 
+        {/* Autenticación */}
         <Route
           path="/iniciar-sesion"
           element={<IniSesionPagina />}
@@ -56,18 +99,15 @@ function App() {
 
         <Route
           path="/recuperar-contrasena"
-          element={
-            <RecuperarContrasenaPagina />
-          }
+          element={<RecuperarContrasenaPagina />}
         />
 
         <Route
           path="/restablecer-contrasena/:token"
-          element={
-            <RestablecerContrasenaPagina />
-          }
+          element={<RestablecerContrasenaPagina />}
         />
 
+        {/* Publicar libro */}
         <Route
           path="/publicar-libro"
           element={
@@ -77,6 +117,7 @@ function App() {
           }
         />
 
+        {/* Editar libro */}
         <Route
           path="/libros/:id/editar"
           element={
@@ -86,11 +127,13 @@ function App() {
           }
         />
 
+        {/* Detalle de libro */}
         <Route
           path="/libros/:id"
           element={<DetalleLibroPag />}
         />
 
+        {/* Perfil de usuario */}
         <Route
           path="/app"
           element={
@@ -100,6 +143,17 @@ function App() {
           }
         />
 
+        {/* Panel de administración */}
+        <Route
+          path="/admin"
+          element={
+            <RutaAdministrador>
+              <IniAdmin />
+            </RutaAdministrador>
+          }
+        />
+
+        {/* Página no encontrada */}
         <Route
           path="*"
           element={<NoEncontradoPagina />}

@@ -201,12 +201,12 @@ function RegistroPagina() {
       }
 
       const respuesta = await fetch(
-  `${URL_API}/api/auth/registro`,
-  {
-    method: "POST",
-    body: datosFormulario,
-  },
-);
+        `${URL_API}/api/auth/registro`,
+        {
+          method: "POST",
+          body: datosFormulario,
+        },
+      );
 
       const datos = (await respuesta.json()) as {
         mensaje?: string;
@@ -325,11 +325,10 @@ function RegistroPagina() {
               <label>
                 Correo electrónico *
                 <span
-                  className={`input-wrapper ${
-                    campoDuplicado === "correo"
+                  className={`input-wrapper ${campoDuplicado === "correo"
                       ? "campo-duplicado"
                       : ""
-                  }`}
+                    }`}
                 >
                   <Mail size={19} />
                   <input
@@ -366,11 +365,10 @@ function RegistroPagina() {
               <label>
                 Teléfono *
                 <span
-                  className={`input-wrapper ${
-                    campoDuplicado === "telefono"
+                  className={`input-wrapper ${campoDuplicado === "telefono"
                       ? "campo-duplicado"
                       : ""
-                  }`}
+                    }`}
                 >
                   <Phone size={19} />
                   <input
