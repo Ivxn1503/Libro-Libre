@@ -205,16 +205,18 @@ router.get(
         });
       }
 
-      const estatusTexto = estadoConsulta || "DISPONIBLE";
-      if (!esEstadoValido(estatusTexto)) {
+      // La consulta pública solo permite publicaciones disponibles.
+      // Evita revelar libros ocultos, eliminados, reservados o entregados
+      // mediante el parámetro ?estatus=.
+      if (estadoConsulta && estadoConsulta !== "DISPONIBLE") {
         return respuesta.status(400).json({
-          mensaje: "El estatus indicado no es válido.",
+          mensaje: "El catálogo público solo permite consultar libros disponibles.",
         });
       }
 
       const libros = await prisma.libro.findMany({
         where: {
-          estatus: estatusTexto as never,
+          estatus: "DISPONIBLE",
           // Solo mostrar publicaciones de propietarios activos.
           // No modifica el estatus original de los libros.
           usuario: {
@@ -862,9 +864,8 @@ router.get("/:id", async (peticion, respuesta) => {
     const libro = await prisma.libro.findFirst({
       where: {
         id,
-        estatus: {
-          not: "ELIMINADO" as never,
-        },
+        // Solo los libros disponibles tienen detalle público.
+        estatus: "DISPONIBLE",
         // Evita acceder por URL directa a libros de cuentas bloqueadas.
         usuario: {
           estatus: "ACTIVO",
