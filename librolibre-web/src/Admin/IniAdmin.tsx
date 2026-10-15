@@ -5,7 +5,7 @@ import { URL_API } from "../config";
 import "../Estilos/IniAdmin.css";
 
 import {
-  BookOpen, Users, Gift, ArrowLeftRight, Search, Trash2,
+  BookOpen, Users, Gift, ArrowLeftRight, Search, Trash2, UserX,
   UserPlus, ShieldCheck, Ban, CheckCircle, X, LogOut,
   EyeOff, Eye, RefreshCw, AlertCircle,
 } from "lucide-react";
@@ -201,15 +201,16 @@ function IniAdmin() {
     }, `Estado de ${usuario.nombre} actualizado.`);
   };
 
-  const eliminarUsuario = async () => {
+  const desactivarUsuario = async () => {
     if (!usuarioSeleccionado || usuarioSeleccionado.rol === "ADMINISTRADOR" || usuarioSeleccionado.id === miId) return;
     await ejecutar(async () => {
       await solicitar(`/api/admin/usuarios/${usuarioSeleccionado.id}`, { method: "DELETE" });
       setUsuarioSeleccionado(null);
-    }, "Usuario eliminado correctamente.");
+    }, "Usuario desactivado correctamente. Sus datos y publicaciones se conservaron.");
   };
 
   const cambiarEstadoLibro = async (libro: Libro) => {
+    if (libro.estatus !== "DISPONIBLE" && libro.estatus !== "OCULTO") return;
     const estatus: EstadoLibro = libro.estatus === "OCULTO" ? "DISPONIBLE" : "OCULTO";
     if (!window.confirm(`¿Quieres ${estatus === "OCULTO" ? "ocultar" : "restaurar"} «${libro.titulo}»?`)) return;
     await ejecutar(async () => {
@@ -220,6 +221,7 @@ function IniAdmin() {
   };
 
   const eliminarLibro = async (libro: Libro) => {
+    if (libro.estatus !== "DISPONIBLE" && libro.estatus !== "OCULTO") return;
     if (!window.confirm(`¿Marcar «${libro.titulo}» como eliminado?`)) return;
     await ejecutar(async () => {
       await solicitar(`/api/admin/libros/${libro.id}`, { method: "DELETE" });
@@ -349,9 +351,11 @@ function IniAdmin() {
                             onClick={() => void cambiarEstadoUsuario(usuario)}>
                             {usuario.estatus === "ACTIVO" ? <Ban size={18} /> : <CheckCircle size={18} />}
                           </button>
-                          <button className="boton-icono peligro" type="button" disabled={procesando}
-                            title="Eliminar usuario" aria-label="Eliminar usuario"
-                            onClick={() => setUsuarioSeleccionado(usuario)}><Trash2 size={18} /></button>
+                          {usuario.estatus !== "INACTIVO" && (
+                            <button className="boton-icono peligro" type="button" disabled={procesando}
+                              title="Desactivar usuario" aria-label="Desactivar usuario"
+                              onClick={() => setUsuarioSeleccionado(usuario)}><UserX size={18} /></button>
+                          )}
                         </div>
                       )}
                     </td>
@@ -378,7 +382,7 @@ function IniAdmin() {
                     <td>#{libro.id}</td><td><strong>{libro.titulo}</strong></td><td>{libro.autor}</td>
                     <td>{libro.modalidad === "REGALO" ? "Regalo" : "Intercambio"}</td><td>{libro.estatus}</td>
                     <td><div style={{ display: "flex", gap: "0.5rem" }}>
-                      {libro.estatus !== "ELIMINADO" && (
+                      {(libro.estatus === "DISPONIBLE" || libro.estatus === "OCULTO") && (
                         <>
                           <button className="boton-icono" type="button" disabled={procesando}
                             title={libro.estatus === "OCULTO" ? "Restaurar como disponible" : "Ocultar libro"}
@@ -431,13 +435,13 @@ function IniAdmin() {
 
       {usuarioSeleccionado && (
         <div className="modal-fondo" role="presentation">
-          <div className="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar-usuario">
-            <h2 id="titulo-eliminar-usuario">¿Eliminar usuario?</h2>
-            <p>¿Estás seguro de que quieres eliminar a <strong>{usuarioSeleccionado.nombre}</strong>? Sus libros asociados también podrían eliminarse de la base de datos.</p>
+          <div className="modal-confirmacion" role="dialog" aria-modal="true" aria-labelledby="titulo-desactivar-usuario">
+            <h2 id="titulo-desactivar-usuario">¿Desactivar usuario?</h2>
+            <p>¿Estás seguro de que quieres desactivar a <strong>{usuarioSeleccionado.nombre}</strong>? No podrá iniciar sesión y sus publicaciones dejarán de mostrarse públicamente. Su información y sus libros se conservarán, y podrás reactivar la cuenta después.</p>
             <div className="modal-botones">
               <button type="button" className="boton secundario" onClick={() => setUsuarioSeleccionado(null)}>Cancelar</button>
-              <button type="button" className="boton primario" disabled={procesando} onClick={() => void eliminarUsuario()}>
-                {procesando ? "Eliminando..." : "Sí, eliminar"}
+              <button type="button" className="boton primario" disabled={procesando} onClick={() => void desactivarUsuario()}>
+                {procesando ? "Desactivando..." : "Sí, desactivar"}
               </button>
             </div>
           </div>
