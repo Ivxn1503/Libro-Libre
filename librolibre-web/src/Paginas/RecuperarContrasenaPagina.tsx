@@ -27,17 +27,17 @@ function RecuperarContrasenaPagina() {
       setEstaEnviando(true);
 
       const respuesta = await fetch(
-  `${URL_API}/api/auth/solicitar-recuperacion`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      correo: correo.trim().toLowerCase(),
-    }),
-  },
-);
+        `${URL_API}/api/auth/solicitar-recuperacion`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correo: correo.trim().toLowerCase(),
+          }),
+        },
+      );
 
       const datos = await respuesta.json();
 

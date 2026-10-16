@@ -210,7 +210,7 @@ router.get(
       // mediante el parámetro ?estatus=.
       if (estadoConsulta && estadoConsulta !== "DISPONIBLE") {
         return respuesta.status(400).json({
-          mensaje: "El catálogo público solo permite consultar libros disponibles.",
+          mensaje: "El catálogo no es público, solo pudes consultar libros disponibles.",
         });
       }
 
@@ -600,9 +600,7 @@ router.put(
         where: {
           id,
           usuarioId: peticion.usuario.id,
-          estatus: {
-            not: "ELIMINADO" as never,
-          },
+          estatus: "DISPONIBLE",
         },
         select: {
           id: true,
@@ -612,7 +610,7 @@ router.put(
       if (!libroExistente) {
         return respuesta.status(404).json({
           mensaje:
-            "No se encontró la publicación o no tienes permiso para editarla.",
+            "La publicación no existe, no te pertenece o no está disponible para editar.",
         });
       }
 
@@ -719,9 +717,12 @@ router.put(
 
       const libroActualizado = await prisma.$transaction(
         async (transaccion) => {
-          const libro = await transaccion.libro.update({
+          // Comprobar propietario y estado de forma atómica al guardar.
+          const actualizacion = await transaccion.libro.updateMany({
             where: {
               id: libroExistente.id,
+              usuarioId: peticion.usuario!.id,
+              estatus: "DISPONIBLE",
             },
             data: {
               titulo: titulo.trim(),
@@ -743,6 +744,10 @@ router.put(
             },
           });
 
+          if (actualizacion.count !== 1) {
+            throw new Error("LIBRO_NO_DISPONIBLE");
+          }
+
           if (archivos.length > 0) {
             await transaccion.imagenLibro.deleteMany({
               where: {
@@ -760,7 +765,9 @@ router.put(
             });
           }
 
-          return libro;
+          return transaccion.libro.findUniqueOrThrow({
+            where: { id: libroExistente.id },
+          });
         },
       );
 
@@ -776,6 +783,11 @@ router.put(
         libro: libroConImagenes,
       });
     } catch (error) {
+      if (error instanceof Error && error.message === "LIBRO_NO_DISPONIBLE") {
+        return respuesta.status(409).json({
+          mensaje: "La publicación cambió de estado y ya no se puede editar.",
+        });
+      }
       console.error("Error al actualizar libro:", error);
       return respuesta.status(500).json({
         mensaje: "Ocurrió un error interno al actualizar la publicación.",
@@ -813,7 +825,7 @@ router.delete(
           id,
           usuarioId: peticion.usuario.id,
           estatus: {
-            not: "ELIMINADO" as never,
+            in: ["DISPONIBLE", "OCULTO"],
           },
         },
         select: {
@@ -824,18 +836,29 @@ router.delete(
       if (!libro) {
         return respuesta.status(404).json({
           mensaje:
-            "No se encontró la publicación o no tienes permiso para eliminarla.",
+            "La publicación no existe, no te pertenece o su estado no permite eliminarla.",
         });
       }
 
-      await prisma.libro.update({
+      // La condición se vuelve a comprobar al modificar el registro.
+      const resultado = await prisma.libro.updateMany({
         where: {
           id: libro.id,
+          usuarioId: peticion.usuario.id,
+          estatus: {
+            in: ["DISPONIBLE", "OCULTO"],
+          },
         },
         data: {
-          estatus: "ELIMINADO" as never,
+          estatus: "ELIMINADO",
         },
       });
+
+      if (resultado.count !== 1) {
+        return respuesta.status(409).json({
+          mensaje: "La publicación cambió de estado y ya no se puede eliminar.",
+        });
+      }
 
       return respuesta.json({
         mensaje: "La publicación fue eliminada correctamente.",
