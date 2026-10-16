@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-
 import { URL_API } from "../config";
-
-import type {
-  ChangeEvent,
-  FormEvent,
-  MouseEvent,
-} from "react";
+import type { ChangeEvent, FormEvent, MouseEvent } from "react";
 import {
   ArrowLeft,
   BookOpen,
@@ -77,8 +71,11 @@ type RespuestaCodigoPostal = {
 
 const MAXIMO_IMAGENES = 6;
 const MAXIMO_TAMANO_IMAGEN = 5 * 1024 * 1024;
-
 const TIPOS_IMAGEN_PERMITIDOS = [
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -131,73 +128,39 @@ const formularioInicial: FormularioLibro = {
 function PublicarLibroPag() {
   const navegar = useNavigate();
   const entradaImagenesRef = useRef<HTMLInputElement>(null);
-  const procesandoImagenesRef = useRef(false);
-  const [convirtiendoImagenes, setConvirtiendoImagenes] = useState(false);
 
   const [formulario, setFormulario] =
     useState<FormularioLibro>(formularioInicial);
-
-  const [estadosMexico, setEstadosMexico] =
-    useState<EstadoApi[]>([]);
-
-  const [ciudadesDisponibles, setCiudadesDisponibles] =
-    useState<CiudadApi[]>([]);
-
-  const [coloniasDisponibles, setColoniasDisponibles] =
-    useState<string[]>([]);
-
-  const [cargandoEstados, setCargandoEstados] =
-    useState(true);
-
-  const [cargandoCiudades, setCargandoCiudades] =
-    useState(false);
-
-  const [cargandoCodigoPostal, setCargandoCodigoPostal] =
-    useState(false);
-
+  const [estadosMexico, setEstadosMexico] = useState<EstadoApi[]>([]);
+  const [ciudadesDisponibles, setCiudadesDisponibles] = useState<CiudadApi[]>([]);
+  const [coloniasDisponibles, setColoniasDisponibles] = useState<string[]>([]);
+  const [cargandoEstados, setCargandoEstados] = useState(true);
+  const [cargandoCiudades, setCargandoCiudades] = useState(false);
+  const [cargandoCodigoPostal, setCargandoCodigoPostal] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [mensajeImagenes, setMensajeImagenes] =
-    useState("");
-
-  const [mensajeCodigoPostal, setMensajeCodigoPostal] =
-    useState("");
-
+  const [mensajeImagenes, setMensajeImagenes] = useState("");
+  const [mensajeCodigoPostal, setMensajeCodigoPostal] = useState("");
   const [esError, setEsError] = useState(false);
-  const [estaEnviando, setEstaEnviando] =
-    useState(false);
-
-  const [vistasPreviasImagenes, setVistasPreviasImagenes] =
-    useState<string[]>([]);
-
-  const [mostrarAyudaIsbn, setMostrarAyudaIsbn] =
-    useState(false);
+  const [estaEnviando, setEstaEnviando] = useState(false);
+  const [vistasPreviasImagenes, setVistasPreviasImagenes] = useState<string[]>([]);
+  const [mostrarAyudaIsbn, setMostrarAyudaIsbn] = useState(false);
 
   useEffect(() => {
     const cargarEstados = async () => {
       try {
         setCargandoEstados(true);
-
-        const respuesta = await fetch(
-          `${URL_API}/api/ubicaciones/estados`,
-        );
-
-        const datos =
-          (await respuesta.json()) as RespuestaEstados;
+        const respuesta = await fetch(`${URL_API}/api/ubicaciones/estados`);
+        const datos = (await respuesta.json()) as RespuestaEstados;
 
         if (!respuesta.ok) {
           throw new Error(
-            datos.mensaje ??
-              "No se pudieron cargar los estados.",
+            datos.mensaje ?? "No se pudieron cargar los estados.",
           );
         }
 
         setEstadosMexico(datos.estados ?? []);
       } catch (error) {
-        console.error(
-          "Error al cargar estados:",
-          error,
-        );
-
+        console.error("Error al cargar estados:", error);
         setEsError(true);
         setMensaje(
           "No se pudieron cargar los estados. Verifica que la API esté ejecutándose.",
@@ -226,24 +189,17 @@ function PublicarLibroPag() {
             formulario.estado,
           )}/ciudades`,
         );
-
-        const datos =
-          (await respuesta.json()) as RespuestaCiudades;
+        const datos = (await respuesta.json()) as RespuestaCiudades;
 
         if (!respuesta.ok) {
           throw new Error(
-            datos.mensaje ??
-              "No se pudieron cargar las ciudades.",
+            datos.mensaje ?? "No se pudieron cargar las ciudades.",
           );
         }
 
         setCiudadesDisponibles(datos.ciudades ?? []);
       } catch (error) {
-        console.error(
-          "Error al cargar ciudades:",
-          error,
-        );
-
+        console.error("Error al cargar ciudades:", error);
         setEsError(true);
         setMensaje(
           "No se pudieron cargar las ciudades del estado seleccionado.",
@@ -259,7 +215,7 @@ function PublicarLibroPag() {
   useEffect(() => {
     return () => {
       vistasPreviasImagenes.forEach((vistaPrevia) => {
-        URL.revokeObjectURL(vistaPrevia);
+        if (vistaPrevia) URL.revokeObjectURL(vistaPrevia);
       });
     };
   }, [vistasPreviasImagenes]);
@@ -274,14 +230,11 @@ function PublicarLibroPag() {
     }));
   };
 
-  const manejarCambioEstado = (
-    evento: ChangeEvent<HTMLSelectElement>,
-  ) => {
+  const manejarCambioEstado = (evento: ChangeEvent<HTMLSelectElement>) => {
     const estado = evento.target.value;
 
     setColoniasDisponibles([]);
     setMensajeCodigoPostal("");
-
     setFormulario((formularioAnterior) => ({
       ...formularioAnterior,
       codigoPostal: "",
@@ -292,14 +245,11 @@ function PublicarLibroPag() {
     }));
   };
 
-  const manejarCambioCiudad = (
-    evento: ChangeEvent<HTMLSelectElement>,
-  ) => {
+  const manejarCambioCiudad = (evento: ChangeEvent<HTMLSelectElement>) => {
     const ciudad = evento.target.value;
 
     setColoniasDisponibles([]);
     setMensajeCodigoPostal("");
-
     setFormulario((formularioAnterior) => ({
       ...formularioAnterior,
       codigoPostal: "",
@@ -312,15 +262,12 @@ function PublicarLibroPag() {
   const manejarCambioCodigoPostal = async (
     evento: ChangeEvent<HTMLInputElement>,
   ) => {
-    const codigoPostal = evento.target.value
-      .replace(/\D/g, "")
-      .slice(0, 5);
+    const codigoPostal = evento.target.value.replace(/\D/g, "").slice(0, 5);
 
     setMensajeCodigoPostal("");
 
     if (codigoPostal.length < 5) {
       setColoniasDisponibles([]);
-
       setFormulario((formularioAnterior) => ({
         ...formularioAnterior,
         codigoPostal,
@@ -329,7 +276,6 @@ function PublicarLibroPag() {
         municipio: "",
         colonia: "",
       }));
-
       return;
     }
 
@@ -339,9 +285,7 @@ function PublicarLibroPag() {
       const respuesta = await fetch(
         `${URL_API}/api/ubicaciones/codigo-postal/${codigoPostal}`,
       );
-
-      const datos =
-        (await respuesta.json()) as RespuestaCodigoPostal;
+      const datos = (await respuesta.json()) as RespuestaCodigoPostal;
 
       if (!respuesta.ok) {
         throw new Error(
@@ -356,7 +300,6 @@ function PublicarLibroPag() {
       const coloniasEncontradas = datos.colonias ?? [];
 
       setColoniasDisponibles(coloniasEncontradas);
-
       setFormulario((formularioAnterior) => ({
         ...formularioAnterior,
         codigoPostal,
@@ -364,18 +307,11 @@ function PublicarLibroPag() {
         ciudad: ciudadEncontrada,
         municipio: municipioEncontrado,
         colonia:
-          coloniasEncontradas.length === 1
-            ? coloniasEncontradas[0]
-            : "",
+          coloniasEncontradas.length === 1 ? coloniasEncontradas[0] : "",
       }));
     } catch (error) {
-      console.error(
-        "Error al buscar código postal:",
-        error,
-      );
-
+      console.error("Error al buscar código postal:", error);
       setColoniasDisponibles([]);
-
       setFormulario((formularioAnterior) => ({
         ...formularioAnterior,
         codigoPostal,
@@ -384,7 +320,6 @@ function PublicarLibroPag() {
         municipio: "",
         colonia: "",
       }));
-
       setMensajeCodigoPostal(
         error instanceof Error
           ? error.message
@@ -395,15 +330,11 @@ function PublicarLibroPag() {
     }
   };
 
-  const manejarImagenes = async (
-    evento: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const manejarImagenes = (evento: ChangeEvent<HTMLInputElement>) => {
     const archivosSeleccionados = Array.from(evento.target.files ?? []);
     evento.target.value = "";
 
-    if (procesandoImagenesRef.current || archivosSeleccionados.length === 0) {
-      return;
-    }
+    if (archivosSeleccionados.length === 0) return;
 
     const espaciosDisponibles = MAXIMO_IMAGENES - formulario.imagenes.length;
     if (archivosSeleccionados.length > espaciosDisponibles) {
@@ -413,74 +344,55 @@ function PublicarLibroPag() {
       return;
     }
 
-    procesandoImagenesRef.current = true;
-    setConvirtiendoImagenes(true);
-    setMensajeImagenes("");
+    for (const archivo of archivosSeleccionados) {
+      const extensionPermitida = /\.(jpe?g|png|webp|heic|heif)$/i.test(
+        archivo.name,
+      );
+      const tipoPermitido = TIPOS_IMAGEN_PERMITIDOS.includes(
+        archivo.type.toLowerCase(),
+      );
+      const tipoGenerico =
+        !archivo.type || archivo.type === "application/octet-stream";
 
-    try {
-      const archivosProcesados: File[] = [];
-
-      for (const archivo of archivosSeleccionados) {
-        const esHeic =
-          /\.(heic|heif)$/i.test(archivo.name) ||
-          ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"].includes(archivo.type.toLowerCase());
-
-        let imagen = archivo;
-        if (esHeic) {
-          // Carga la librería únicamente cuando alguien selecciona HEIC/HEIF.
-          const { default: heic2any } = await import("heic2any");
-          const resultado = await heic2any({
-            blob: archivo,
-            toType: "image/jpeg",
-            quality: 0.85,
-          });
-          const convertido = Array.isArray(resultado) ? resultado[0] : resultado;
-          imagen = new File(
-            [convertido],
-            archivo.name.replace(/\.(heic|heif)$/i, "") + ".jpg",
-            { type: "image/jpeg", lastModified: Date.now() },
-          );
-        }
-
-        if (!TIPOS_IMAGEN_PERMITIDOS.includes(imagen.type)) {
-          throw new Error(`El archivo «${archivo.name}» no es una imagen JPG, PNG o WebP válida.`);
-        }
-        if (imagen.size > MAXIMO_TAMANO_IMAGEN) {
-          throw new Error(`La imagen «${archivo.name}» supera los 5 MB permitidos.`);
-        }
-        archivosProcesados.push(imagen);
+      if (!tipoPermitido && !(tipoGenerico && extensionPermitida)) {
+        setMensajeImagenes(
+          `El archivo «${archivo.name}» debe ser JPG, PNG, WebP, HEIC o HEIF.`,
+        );
+        return;
       }
 
-      const vistasPreviasNuevas = archivosProcesados.map((imagen) =>
-        URL.createObjectURL(imagen),
-      );
-      setFormulario((anterior) => ({
-        ...anterior,
-        imagenes: [...anterior.imagenes, ...archivosProcesados],
-      }));
-      setVistasPreviasImagenes((anteriores) => [
-        ...anteriores,
-        ...vistasPreviasNuevas,
-      ]);
-      setEsError(false);
-    } catch (error) {
-      console.error("Error al procesar fotografías:", error);
-      setMensajeImagenes(
-        error instanceof Error
-          ? error.message
-          : "No se pudo convertir la fotografía. Prueba con una imagen JPG.",
-      );
-    } finally {
-      procesandoImagenesRef.current = false;
-      setConvirtiendoImagenes(false);
+      if (archivo.size > MAXIMO_TAMANO_IMAGEN) {
+        setMensajeImagenes(
+          `La imagen «${archivo.name}» supera los 5 MB permitidos.`,
+        );
+        return;
+      }
     }
+
+    const vistasPreviasNuevas = archivosSeleccionados.map((archivo) => {
+      const esHeic =
+        /\.(heic|heif)$/i.test(archivo.name) ||
+        /image\/hei[cf]/i.test(archivo.type);
+      return esHeic ? "" : URL.createObjectURL(archivo);
+    });
+
+    setFormulario((anterior) => ({
+      ...anterior,
+      imagenes: [...anterior.imagenes, ...archivosSeleccionados],
+    }));
+    setVistasPreviasImagenes((anteriores) => [
+      ...anteriores,
+      ...vistasPreviasNuevas,
+    ]);
+    setMensajeImagenes("");
+    setEsError(false);
   };
 
   const quitarImagen = (indice: number) => {
     const vistaPrevia = vistasPreviasImagenes[indice];
 
     if (vistaPrevia) {
-      URL.revokeObjectURL(vistaPrevia);
+      if (vistaPrevia) URL.revokeObjectURL(vistaPrevia);
     }
 
     actualizarCampo(
@@ -491,44 +403,30 @@ function PublicarLibroPag() {
     );
 
     setVistasPreviasImagenes((vistasAnteriores) =>
-      vistasAnteriores.filter(
-        (_, indiceActual) => indiceActual !== indice,
-      ),
+      vistasAnteriores.filter((_, indiceActual) => indiceActual !== indice),
     );
 
     setMensajeImagenes("");
   };
 
-  const manejarClicSelector = (
-    evento: MouseEvent<HTMLInputElement>,
-  ) => {
-    if (convirtiendoImagenes || formulario.imagenes.length >= MAXIMO_IMAGENES) {
+  const manejarClicSelector = (evento: MouseEvent<HTMLInputElement>) => {
+    if (formulario.imagenes.length >= MAXIMO_IMAGENES) {
       evento.preventDefault();
-
       setMensajeImagenes(
         `Ya tienes ${MAXIMO_IMAGENES} fotos. Borra una para agregar otra.`,
       );
     }
   };
 
-  const manejarEnvio = async (
-    evento: FormEvent<HTMLFormElement>,
-  ) => {
+  const manejarEnvio = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
 
     setMensaje("");
     setEsError(false);
 
-    if (convirtiendoImagenes) {
-      setEsError(true);
-      setMensaje("Espera a que terminen de procesarse las fotografías.");
-      return;
-    }
-
     const estadoValido = estadosMexico.some(
       (estado) => estado.nombre === formulario.estado,
     );
-
     const ciudadValida = ciudadesDisponibles.some(
       (ciudad) => ciudad.nombre === formulario.ciudad,
     );
@@ -545,16 +443,13 @@ function PublicarLibroPag() {
       !formulario.ciudad ||
       !estadoValido ||
       !ciudadValida ||
-      (coloniasDisponibles.length > 0 &&
-        !formulario.colonia) ||
+      (coloniasDisponibles.length > 0 && !formulario.colonia) ||
       formulario.imagenes.length === 0
     ) {
       setEsError(true);
-
       setMensaje(
         "Completa los campos obligatorios, ingresa un código postal válido, selecciona una ubicación válida y agrega al menos una imagen.",
       );
-
       return;
     }
 
@@ -563,11 +458,7 @@ function PublicarLibroPag() {
       !formulario.descripcionIntercambio.trim()
     ) {
       setEsError(true);
-
-      setMensaje(
-        "Describe qué te interesa recibir a cambio.",
-      );
-
+      setMensaje("Describe qué te interesa recibir a cambio.");
       return;
     }
 
@@ -575,11 +466,7 @@ function PublicarLibroPag() {
 
     if (!token) {
       setEsError(true);
-
-      setMensaje(
-        "Debes iniciar sesión antes de publicar un libro.",
-      );
-
+      setMensaje("Debes iniciar sesión antes de publicar un libro.");
       return;
     }
 
@@ -595,94 +482,39 @@ function PublicarLibroPag() {
         anoPublicacion > new Date().getFullYear())
     ) {
       setEsError(true);
-
-      setMensaje(
-        "Ingresa un año de publicación válido.",
-      );
-
+      setMensaje("Ingresa un año de publicación válido.");
       return;
     }
 
     const datosFormulario = new FormData();
 
-    datosFormulario.append(
-      "titulo",
-      formulario.titulo.trim(),
-    );
-
-    datosFormulario.append(
-      "autor",
-      formulario.autor.trim(),
-    );
-
-    datosFormulario.append(
-      "editorial",
-      formulario.editorial.trim(),
-    );
-
-    datosFormulario.append(
-      "isbn",
-      formulario.isbn.trim(),
-    );
+    datosFormulario.append("titulo", formulario.titulo.trim());
+    datosFormulario.append("autor", formulario.autor.trim());
+    datosFormulario.append("editorial", formulario.editorial.trim());
+    datosFormulario.append("isbn", formulario.isbn.trim());
 
     if (anoPublicacion !== null) {
-      datosFormulario.append(
-        "anoPublicacion",
-        String(anoPublicacion),
-      );
+      datosFormulario.append("anoPublicacion", String(anoPublicacion));
     }
 
     datosFormulario.append(
       "categoriaId",
       String(Number(formulario.categoriaId)),
     );
-
-    datosFormulario.append(
-      "condicion",
-      formulario.condicion,
-    );
-
-    datosFormulario.append(
-      "descripcion",
-      formulario.descripcion.trim(),
-    );
-
-    datosFormulario.append(
-      "modalidad",
-      formulario.modalidad,
-    );
-
+    datosFormulario.append("condicion", formulario.condicion);
+    datosFormulario.append("descripcion", formulario.descripcion.trim());
+    datosFormulario.append("modalidad", formulario.modalidad);
     datosFormulario.append(
       "descripcionIntercambio",
       formulario.modalidad === "INTERCAMBIO"
         ? formulario.descripcionIntercambio.trim()
         : "",
     );
-
-    datosFormulario.append(
-      "codigoPostal",
-      formulario.codigoPostal.trim(),
-    );
-
-    datosFormulario.append(
-      "estado",
-      formulario.estado,
-    );
-
-    datosFormulario.append(
-      "ciudad",
-      formulario.ciudad,
-    );
-
-    datosFormulario.append(
-      "municipio",
-      formulario.municipio.trim(),
-    );
-
-    datosFormulario.append(
-      "colonia",
-      formulario.colonia.trim(),
-    );
+    datosFormulario.append("codigoPostal", formulario.codigoPostal.trim());
+    datosFormulario.append("estado", formulario.estado);
+    datosFormulario.append("ciudad", formulario.ciudad);
+    datosFormulario.append("municipio", formulario.municipio.trim());
+    datosFormulario.append("colonia", formulario.colonia.trim());
 
     formulario.imagenes.forEach((imagen) => {
       datosFormulario.append("imagenes", imagen);
@@ -691,39 +523,27 @@ function PublicarLibroPag() {
     try {
       setEstaEnviando(true);
 
-      const respuesta = await fetch(
-        `${URL_API}/api/libros`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: datosFormulario,
+      const respuesta = await fetch(`${URL_API}/api/libros`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: datosFormulario,
+      });
 
-      const datos =
-        (await respuesta.json()) as RespuestaApi;
+      const datos = (await respuesta.json()) as RespuestaApi;
 
       if (!respuesta.ok) {
         setEsError(true);
-
-        setMensaje(
-          datos.mensaje ??
-            "No fue posible publicar el libro.",
-        );
-
+        setMensaje(datos.mensaje ?? "No fue posible publicar el libro.");
         return;
       }
 
       setEsError(false);
-
-      setMensaje(
-        "Libro publicado correctamente. Redirigiendo...",
-      );
+      setMensaje("Libro publicado correctamente. Redirigiendo...");
 
       vistasPreviasImagenes.forEach((vistaPrevia) => {
-        URL.revokeObjectURL(vistaPrevia);
+        if (vistaPrevia) URL.revokeObjectURL(vistaPrevia);
       });
 
       setFormulario(formularioInicial);
@@ -737,13 +557,8 @@ function PublicarLibroPag() {
         navegar("/");
       }, 1200);
     } catch (error) {
-      console.error(
-        "Error al publicar libro:",
-        error,
-      );
-
+      console.error("Error al publicar libro:", error);
       setEsError(true);
-
       setMensaje(
         "No se pudo conectar con el servidor. Verifica que la API esté ejecutándose.",
       );
@@ -765,57 +580,37 @@ function PublicarLibroPag() {
         </button>
 
         <div className="auth-visual-content">
-          <span className="auth-badge">
-            Comparte · Lee · Reutiliza
-          </span>
-
+          <span className="auth-badge">Comparte · Lee · Reutiliza</span>
           <h1>
             Dale una nueva vida
             <span> a tus libros.</span>
           </h1>
-
           <p>
-            Publica un libro para regalarlo o intercambiarlo
-            con alguien de tu comunidad.
+            Publica un libro para regalarlo o intercambiarlo con alguien de tu
+            comunidad.
           </p>
 
           <div className="register-book-stack">
-            <div className="stack-book stack-book-one">
-              COMPARTE
-            </div>
-            <div className="stack-book stack-book-two">
-              INTERCAMBIA
-            </div>
-            <div className="stack-book stack-book-three">
-              REUTILIZA
-            </div>
+            <div className="stack-book stack-book-one">COMPARTE</div>
+            <div className="stack-book stack-book-two">INTERCAMBIA</div>
+            <div className="stack-book stack-book-three">REUTILIZA</div>
           </div>
         </div>
 
-        <p className="auth-quote">
-          “Cada libro puede tener muchas vidas.”
-        </p>
+        <p className="auth-quote">“Cada libro puede tener muchas vidas.”</p>
       </section>
 
       <section className="auth-form-section">
         <div className="auth-form-wrapper register-form-wrapper">
           <div className="auth-title">
-            <span className="section-label">
-              Nueva publicación
-            </span>
-
+            <span className="section-label">Nueva publicación</span>
             <h2>Publicar un libro</h2>
-
             <p>
-              Completa la información para compartir tu libro
-              con la comunidad.
+              Completa la información para compartir tu libro con la comunidad.
             </p>
           </div>
 
-          <form
-            className="auth-form"
-            onSubmit={manejarEnvio}
-          >
+          <form className="auth-form" onSubmit={manejarEnvio}>
             <div className="two-columns">
               <label>
                 Título del libro *
@@ -826,10 +621,7 @@ function PublicarLibroPag() {
                     placeholder="Ej. El Principito"
                     value={formulario.titulo}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "titulo",
-                        evento.target.value,
-                      )
+                      actualizarCampo("titulo", evento.target.value)
                     }
                   />
                 </span>
@@ -843,10 +635,7 @@ function PublicarLibroPag() {
                     placeholder="Ej. Antoine de Saint-Exupéry"
                     value={formulario.autor}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "autor",
-                        evento.target.value,
-                      )
+                      actualizarCampo("autor", evento.target.value)
                     }
                   />
                 </span>
@@ -862,10 +651,7 @@ function PublicarLibroPag() {
                     placeholder="Editorial"
                     value={formulario.editorial}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "editorial",
-                        evento.target.value,
-                      )
+                      actualizarCampo("editorial", evento.target.value)
                     }
                   />
                 </span>
@@ -877,11 +663,7 @@ function PublicarLibroPag() {
                   <button
                     type="button"
                     className="boton-ayuda"
-                    onClick={() =>
-                      setMostrarAyudaIsbn(
-                        !mostrarAyudaIsbn,
-                      )
-                    }
+                    onClick={() => setMostrarAyudaIsbn(!mostrarAyudaIsbn)}
                     aria-label="¿Qué es el ISBN?"
                     aria-expanded={mostrarAyudaIsbn}
                   >
@@ -890,13 +672,9 @@ function PublicarLibroPag() {
                 </span>
 
                 {mostrarAyudaIsbn && (
-                  <span
-                    className="ayuda-isbn"
-                    role="tooltip"
-                  >
-                    El ISBN es un código único que identifica
-                    una edición específica de un libro. Este
-                    campo es opcional.
+                  <span className="ayuda-isbn" role="tooltip">
+                    El ISBN es un código único que identifica una edición
+                    específica de un libro. Este campo es opcional.
                   </span>
                 )}
 
@@ -906,10 +684,7 @@ function PublicarLibroPag() {
                     placeholder="Opcional"
                     value={formulario.isbn}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "isbn",
-                        evento.target.value,
-                      )
+                      actualizarCampo("isbn", evento.target.value)
                     }
                   />
                 </span>
@@ -927,10 +702,7 @@ function PublicarLibroPag() {
                     placeholder="Opcional"
                     value={formulario.anoPublicacion}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "anoPublicacion",
-                        evento.target.value,
-                      )
+                      actualizarCampo("anoPublicacion", evento.target.value)
                     }
                   />
                 </span>
@@ -942,21 +714,12 @@ function PublicarLibroPag() {
                   <select
                     value={formulario.categoriaId}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "categoriaId",
-                        evento.target.value,
-                      )
+                      actualizarCampo("categoriaId", evento.target.value)
                     }
                   >
-                    <option value="">
-                      Selecciona una categoría
-                    </option>
-
+                    <option value="">Selecciona una categoría</option>
                     {categorias.map((categoria) => (
-                      <option
-                        key={categoria.id}
-                        value={categoria.id}
-                      >
+                      <option key={categoria.id} value={categoria.id}>
                         {categoria.nombre}
                       </option>
                     ))}
@@ -971,21 +734,12 @@ function PublicarLibroPag() {
                 <select
                   value={formulario.condicion}
                   onChange={(evento) =>
-                    actualizarCampo(
-                      "condicion",
-                      evento.target.value,
-                    )
+                    actualizarCampo("condicion", evento.target.value)
                   }
                 >
-                  <option value="">
-                    Selecciona la condición
-                  </option>
-
+                  <option value="">Selecciona la condición</option>
                   {condiciones.map((condicion) => (
-                    <option
-                      key={condicion.valor}
-                      value={condicion.valor}
-                    >
+                    <option key={condicion.valor} value={condicion.valor}>
                       {condicion.nombre}
                     </option>
                   ))}
@@ -1000,10 +754,7 @@ function PublicarLibroPag() {
                   placeholder="Describe el estado y las características del libro."
                   value={formulario.descripcion}
                   onChange={(evento) =>
-                    actualizarCampo(
-                      "descripcion",
-                      evento.target.value,
-                    )
+                    actualizarCampo("descripcion", evento.target.value)
                   }
                   rows={4}
                 />
@@ -1019,60 +770,70 @@ function PublicarLibroPag() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                   multiple
-                  onChange={(evento) => void manejarImagenes(evento)}
+                  onChange={manejarImagenes}
                   onClick={manejarClicSelector}
-                  disabled={convirtiendoImagenes}
+                  disabled={formulario.imagenes.length >= MAXIMO_IMAGENES}
                 />
               </span>
-
               <small className="ayuda-fotos">
-                Puedes agregar hasta 6 fotos. Formatos permitidos:
-                JPG, PNG, WebP o HEIC/HEIF (conversión automática). Máximo 5 MB por imagen procesada.
-                {convirtiendoImagenes && " Convirtiendo fotografías, espera un momento..."}
+                Puedes agregar hasta 6 fotos. Formatos permitidos: JPG, PNG,
+                WebP o HEIC/HEIF. Máximo 5 MB por imagen. Las fotos se optimizan
+                en el servidor.
               </small>
             </label>
 
             {vistasPreviasImagenes.length > 0 && (
               <div className="rejilla-vistas-previas">
-                {vistasPreviasImagenes.map(
-                  (vistaPrevia, indice) => (
-                    <div
-                      className="vista-previa-imagen"
-                      key={vistaPrevia}
-                    >
+                {vistasPreviasImagenes.map((vistaPrevia, indice) => (
+                  <div
+                    className="vista-previa-imagen"
+                    key={`${formulario.imagenes[indice]?.name}-${indice}`}
+                  >
+                    {vistaPrevia ? (
                       <img
                         src={vistaPrevia}
-                        alt={`Vista previa ${
-                          indice + 1
-                        } del libro`}
+                        alt={`Vista previa ${indice + 1} del libro`}
                       />
-
-                      {indice === 0 && (
-                        <span className="insignia-portada">
-                          Portada
-                        </span>
-                      )}
-
-                      <button
-                        type="button"
-                        className="quitar-imagen"
-                        onClick={() => quitarImagen(indice)}
-                        aria-label={`Quitar imagen ${
-                          indice + 1
-                        }`}
+                    ) : (
+                      <div
+                        role="img"
+                        aria-label={`Fotografía HEIC/HEIF ${indice + 1}`}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          minHeight: 130,
+                          padding: 12,
+                          textAlign: "center",
+                        }}
                       >
-                        <X size={17} />
-                      </button>
-                    </div>
-                  ),
-                )}
+                        <ImagePlus size={30} />
+                        <span>Fotografía HEIC/HEIF</span>
+                        <small>Se mostrará al publicarla</small>
+                      </div>
+                    )}
+
+                    {indice === 0 && (
+                      <span className="insignia-portada">Portada</span>
+                    )}
+
+                    <button
+                      type="button"
+                      className="quitar-imagen"
+                      onClick={() => quitarImagen(indice)}
+                      aria-label={`Quitar imagen ${indice + 1}`}
+                    >
+                      <X size={17} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
             {mensajeImagenes && (
-              <p className="mensaje-imagenes-error">
-                {mensajeImagenes}
-              </p>
+              <p className="mensaje-imagenes-error">{mensajeImagenes}</p>
             )}
 
             <fieldset className="modalidad-grupo">
@@ -1091,12 +852,9 @@ function PublicarLibroPag() {
                     )
                   }
                 />
-
                 <span>
                   <strong>Regalo</strong>
-                  <small>
-                    Quiero entregar este libro gratuitamente.
-                  </small>
+                  <small>Quiero entregar este libro gratuitamente.</small>
                 </span>
               </label>
 
@@ -1105,9 +863,7 @@ function PublicarLibroPag() {
                   type="radio"
                   name="modalidad"
                   value="INTERCAMBIO"
-                  checked={
-                    formulario.modalidad === "INTERCAMBIO"
-                  }
+                  checked={formulario.modalidad === "INTERCAMBIO"}
                   onChange={(evento) =>
                     actualizarCampo(
                       "modalidad",
@@ -1115,12 +871,9 @@ function PublicarLibroPag() {
                     )
                   }
                 />
-
                 <span>
                   <strong>Intercambio</strong>
-                  <small>
-                    Quiero recibir otro libro a cambio.
-                  </small>
+                  <small>Quiero recibir otro libro a cambio.</small>
                 </span>
               </label>
             </fieldset>
@@ -1156,18 +909,13 @@ function PublicarLibroPag() {
                   onChange={manejarCambioCodigoPostal}
                 />
               </span>
-
               <small className="ayuda-fotos">
                 Ingresa cinco dígitos para completar la ubicación
                 automáticamente.
               </small>
-
               {cargandoCodigoPostal && (
-                <small className="ayuda-fotos">
-                  Buscando ubicación...
-                </small>
+                <small className="ayuda-fotos">Buscando ubicación...</small>
               )}
-
               {mensajeCodigoPostal && (
                 <small className="mensaje-imagenes-error">
                   {mensajeCodigoPostal}
@@ -1182,21 +930,15 @@ function PublicarLibroPag() {
                   <select
                     value={formulario.estado}
                     onChange={manejarCambioEstado}
-                    disabled={
-                      cargandoEstados || cargandoCodigoPostal
-                    }
+                    disabled={cargandoEstados || cargandoCodigoPostal}
                   >
                     <option value="">
                       {cargandoEstados
                         ? "Cargando estados..."
                         : "Selecciona tu estado"}
                     </option>
-
                     {estadosMexico.map((estado) => (
-                      <option
-                        key={estado.nombre}
-                        value={estado.nombre}
-                      >
+                      <option key={estado.nombre} value={estado.nombre}>
                         {estado.nombre}
                       </option>
                     ))}
@@ -1223,12 +965,8 @@ function PublicarLibroPag() {
                           ? "Selecciona tu ciudad"
                           : "Primero selecciona un estado"}
                     </option>
-
                     {ciudadesDisponibles.map((ciudad) => (
-                      <option
-                        key={ciudad.nombre}
-                        value={ciudad.nombre}
-                      >
+                      <option key={ciudad.nombre} value={ciudad.nombre}>
                         {ciudad.nombre}
                       </option>
                     ))}
@@ -1256,17 +994,11 @@ function PublicarLibroPag() {
                   <select
                     value={formulario.colonia}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "colonia",
-                        evento.target.value,
-                      )
+                      actualizarCampo("colonia", evento.target.value)
                     }
                     disabled={cargandoCodigoPostal}
                   >
-                    <option value="">
-                      Selecciona tu colonia
-                    </option>
-
+                    <option value="">Selecciona tu colonia</option>
                     {coloniasDisponibles.map((colonia) => (
                       <option key={colonia} value={colonia}>
                         {colonia}
@@ -1279,10 +1011,7 @@ function PublicarLibroPag() {
                     placeholder="Opcional"
                     value={formulario.colonia}
                     onChange={(evento) =>
-                      actualizarCampo(
-                        "colonia",
-                        evento.target.value,
-                      )
+                      actualizarCampo("colonia", evento.target.value)
                     }
                   />
                 )}
@@ -1304,16 +1033,13 @@ function PublicarLibroPag() {
               className="button button-primary auth-submit"
               disabled={
                 estaEnviando ||
-                convirtiendoImagenes ||
                 cargandoEstados ||
                 cargandoCiudades ||
                 cargandoCodigoPostal
               }
             >
               <Send size={18} />
-              {estaEnviando
-                ? "Publicando libro..."
-                : "Publicar libro"}
+              {estaEnviando ? "Publicando libro..." : "Publicar libro"}
             </button>
           </form>
         </div>

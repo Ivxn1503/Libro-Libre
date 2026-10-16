@@ -7,6 +7,7 @@ import {
 import { autenticacionOpcional } from "../rutas/noauth.js";
 import subirImagen from "../intermedios/subidaImagen.js";
 import prisma from "../prisma.js";
+import { optimizarImagen } from "../servicios/procesarImagen.js";
 
 const router = Router();
 
@@ -84,56 +85,77 @@ function obtenerNumeroConsulta(valor: unknown): number | undefined {
   return numero;
 }
 
-async function subirImagenLibro(archivo: Express.Multer.File) {
-  const extension =
-    archivo.originalname.split(".").pop()?.toLowerCase() || "jpg";
+const BUCKET_IMAGENES = "librolibre-imagenes";
 
-  const nombreArchivo = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
-  const ruta = `libros/${nombreArchivo}`;
+type ImagenSubida = { url: string; ruta: string };
 
-  console.log("=== SUBIENDO IMAGEN ===");
-  console.log("Nombre original:", archivo.originalname);
-  console.log("MIME:", archivo.mimetype);
-  console.log("Tamaño:", archivo.size);
-  console.log("Buffer:", Buffer.isBuffer(archivo.buffer));
-  console.log("Bytes buffer:", archivo.buffer?.length);
-  console.log("Ruta:", ruta);
+class ErrorImagen extends Error {
+  constructor(mensaje: string) {
+    super(mensaje);
+    this.name = "ErrorImagen";
+  }
+}
 
-  try {
-    const { data, error } = await supabase.storage
-      .from("librolibre-imagenes")
-      .upload(ruta, archivo.buffer, {
-        contentType: archivo.mimetype,
-        upsert: false,
-      });
+// Procesar primero todos los archivos, uno a la vez. No subir imágenes
+// si alguna es inválida; esto también evita ejecutar varios HEIC a la vez.
+async function prepararImagenes(archivos: Express.Multer.File[]): Promise<Buffer[]> {
+  const imagenes: Buffer[] = [];
+  for (const archivo of archivos) {
+    try {
+      imagenes.push(await optimizarImagen(
+        archivo.buffer,
+        archivo.mimetype,
+        archivo.originalname,
+      ));
+    } catch (error) {
+      console.error("Error al procesar imagen:", archivo.originalname, error);
+      throw new ErrorImagen(
+        `No se pudo procesar «${archivo.originalname}». Comprueba que sea una fotografía válida de hasta 5 MB.`,
+      );
+    }
+  }
+  return imagenes;
+}
 
+async function subirImagenes(imagenes: Buffer[], rutas: string[]): Promise<ImagenSubida[]> {
+  const subidas: ImagenSubida[] = [];
+  for (const imagen of imagenes) {
+    const ruta = `libros/${crypto.randomUUID()}.jpg`;
+    // Registrar la ruta antes de subir para intentar limpiar incluso si la
+    // respuesta del servicio falla después de almacenar el objeto.
+    rutas.push(ruta);
+    const { error } = await supabase.storage
+      .from(BUCKET_IMAGENES)
+      .upload(ruta, imagen, { contentType: "image/jpeg", upsert: false });
     if (error) {
-      console.error("ERROR COMPLETO DE SUPABASE STORAGE:", error);
-      throw new Error(
-        `Error al subir imagen a Supabase: ${error.message}`,
-      );
+      throw new Error(`Error al subir fotografía a Supabase: ${error.message}`);
     }
+    const { data } = supabase.storage.from(BUCKET_IMAGENES).getPublicUrl(ruta);
+    subidas.push({ ruta, url: data.publicUrl });
+  }
+  return subidas;
+}
 
-    console.log("Imagen subida:", data);
-
-    const { data: datosUrl } = supabase.storage
-      .from("librolibre-imagenes")
-      .getPublicUrl(ruta);
-
-    console.log("URL pública:", datosUrl.publicUrl);
-
-    return datosUrl.publicUrl;
+async function limpiarImagenes(rutas: string[]): Promise<void> {
+  if (rutas.length === 0) return;
+  try {
+    const { error } = await supabase.storage.from(BUCKET_IMAGENES).remove(rutas);
+    if (error) console.error("No se pudieron limpiar imágenes:", error);
   } catch (error) {
-    console.error("ERROR CAPTURADO AL SUBIR LA IMAGEN:", error);
+    console.error("Error al limpiar imágenes de Supabase:", error);
+  }
+}
 
-    if (error instanceof Error && "cause" in error) {
-      console.error(
-        "CAUSA DEL ERROR:",
-        (error as Error & { cause?: unknown }).cause,
-      );
-    }
-
-    throw error;
+function rutaPropiaDesdeUrl(url: string): string | null {
+  try {
+    const objeto = new URL(url);
+    const marcador = `/storage/v1/object/public/${BUCKET_IMAGENES}/`;
+    const posicion = objeto.pathname.indexOf(marcador);
+    if (posicion === -1) return null;
+    const ruta = decodeURIComponent(objeto.pathname.slice(posicion + marcador.length));
+    return /^libros\/[a-f0-9-]+\.jpg$/i.test(ruta) ? ruta : null;
+  } catch {
+    return null;
   }
 }
 
@@ -410,6 +432,8 @@ router.post(
   requiereAutenticacion,
   subirImagen.array("imagenes", 6),
   async (peticion: PeticionAutenticada, respuesta) => {
+    const rutasNuevas: string[] = [];
+    let guardado = false;
     try {
       const {
         titulo,
@@ -516,6 +540,10 @@ router.post(
         });
       }
 
+      const imagenes = await prepararImagenes(archivos);
+      const subidas = await subirImagenes(imagenes, rutasNuevas);
+
+      // Libro e imágenes se guardan en una única transacción PostgreSQL.
       const libroNuevo = await prisma.libro.create({
         data: {
           titulo: titulo.trim(),
@@ -535,26 +563,19 @@ router.post(
           estado: estado.trim(),
           colonia: colonia?.trim() || null,
           usuarioId: peticion.usuario.id,
+          imagenes: {
+            create: subidas.map((imagen, indice) => ({
+              url: imagen.url,
+              esPortada: indice === 0,
+              orden: indice + 1,
+            })),
+          },
         },
       });
-
-      const urlsImagenes = await Promise.all(
-        archivos.map((archivo) => subirImagenLibro(archivo)),
-      );
-
-      await prisma.imagenLibro.createMany({
-        data: urlsImagenes.map((url, indice) => ({
-          libroId: libroNuevo.id,
-          url,
-          esPortada: indice === 0,
-          orden: indice + 1,
-        })),
-      });
+      guardado = true;
 
       const libroConImagenes = await prisma.libro.findUnique({
-        where: {
-          id: libroNuevo.id,
-        },
+        where: { id: libroNuevo.id },
         include: incluirDatosLibro,
       });
 
@@ -563,6 +584,10 @@ router.post(
         libro: libroConImagenes,
       });
     } catch (error) {
+      if (!guardado) await limpiarImagenes(rutasNuevas);
+      if (error instanceof ErrorImagen) {
+        return respuesta.status(422).json({ mensaje: error.message });
+      }
       console.error("Error al publicar libro:", error);
       return respuesta.status(500).json({
         mensaje: "Ocurrió un error interno al publicar el libro.",
@@ -582,6 +607,8 @@ router.put(
   requiereAutenticacion,
   subirImagen.array("imagenes", 6),
   async (peticion: PeticionAutenticada, respuesta) => {
+    const rutasNuevas: string[] = [];
+    let guardado = false;
     try {
       const id = Number(peticion.params.id);
       if (!Number.isInteger(id) || id < 1) {
@@ -708,12 +735,15 @@ router.put(
 
       const archivos = Array.isArray(peticion.files) ? peticion.files : [];
 
-      const urlsImagenesNuevas =
-        archivos.length > 0
-          ? await Promise.all(
-              archivos.map((archivo) => subirImagenLibro(archivo)),
-            )
-          : [];
+      const imagenesAnteriores = archivos.length > 0
+        ? await prisma.imagenLibro.findMany({
+            where: { libroId: libroExistente.id },
+            select: { url: true },
+          })
+        : [];
+
+      const imagenesPreparadas = await prepararImagenes(archivos);
+      const imagenesNuevas = await subirImagenes(imagenesPreparadas, rutasNuevas);
 
       const libroActualizado = await prisma.$transaction(
         async (transaccion) => {
@@ -756,9 +786,9 @@ router.put(
             });
 
             await transaccion.imagenLibro.createMany({
-              data: urlsImagenesNuevas.map((url, indice) => ({
+              data: imagenesNuevas.map((imagen, indice) => ({
                 libroId: libroExistente.id,
-                url,
+                url: imagen.url,
                 esPortada: indice === 0,
                 orden: indice + 1,
               })),
@@ -770,6 +800,14 @@ router.put(
           });
         },
       );
+
+      guardado = true;
+      // Borrar las imágenes anteriores solo después de confirmar la transacción.
+      // Una falla de limpieza no revierte la edición ya guardada.
+      const rutasAnteriores = imagenesAnteriores
+        .map((imagen) => rutaPropiaDesdeUrl(imagen.url))
+        .filter((ruta): ruta is string => ruta !== null);
+      await limpiarImagenes(rutasAnteriores);
 
       const libroConImagenes = await prisma.libro.findUnique({
         where: {
@@ -783,6 +821,10 @@ router.put(
         libro: libroConImagenes,
       });
     } catch (error) {
+      if (!guardado) await limpiarImagenes(rutasNuevas);
+      if (error instanceof ErrorImagen) {
+        return respuesta.status(422).json({ mensaje: error.message });
+      }
       if (error instanceof Error && error.message === "LIBRO_NO_DISPONIBLE") {
         return respuesta.status(409).json({
           mensaje: "La publicación cambió de estado y ya no se puede editar.",

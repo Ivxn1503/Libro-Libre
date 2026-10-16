@@ -19,9 +19,6 @@ const puerto = Number(process.env.PORT) || 3000;
 // Configuración general
 app.use(cors());
 app.use(express.json());
-
-app.use("/api/solicitudes", rutasSolicitudes);
-
 app.use(express.urlencoded({ extended: true }));
 
 // Ruta principal
@@ -56,12 +53,15 @@ app.use("/api/ubicaciones", rutasUbicaciones);
 // Libros
 app.use("/api/libros", rutasLibros);
 
+// Solicitudes
+app.use("/api/solicitudes", rutasSolicitudes);
+
 // Administración
 app.use("/api/admin", rutasAdmin);
 
 // Iniciar servidor
-app.listen(puerto, () => {
+app.listen(puerto, "0.0.0.0", () => {
   console.log(
-    `Servidor de LibroLibre ejecutándose en http://localhost:${puerto}`,
+    `Servidor de LibroLibre activo en el puerto ${puerto}`,
   );
 });
