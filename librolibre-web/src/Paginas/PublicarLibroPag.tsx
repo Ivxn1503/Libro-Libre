@@ -131,6 +131,8 @@ const formularioInicial: FormularioLibro = {
 function PublicarLibroPag() {
   const navegar = useNavigate();
   const entradaImagenesRef = useRef<HTMLInputElement>(null);
+  const procesandoImagenesRef = useRef(false);
+  const [convirtiendoImagenes, setConvirtiendoImagenes] = useState(false);
 
   const [formulario, setFormulario] =
     useState<FormularioLibro>(formularioInicial);
@@ -393,29 +395,17 @@ function PublicarLibroPag() {
     }
   };
 
-  const manejarImagenes = (
+  const manejarImagenes = async (
     evento: ChangeEvent<HTMLInputElement>,
   ) => {
-    const archivosSeleccionados = Array.from(
-      evento.target.files ?? [],
-    );
-
+    const archivosSeleccionados = Array.from(evento.target.files ?? []);
     evento.target.value = "";
 
-    if (formulario.imagenes.length >= MAXIMO_IMAGENES) {
-      setMensajeImagenes(
-        `Ya tienes ${MAXIMO_IMAGENES} fotos. Borra una para agregar otra.`,
-      );
+    if (procesandoImagenesRef.current || archivosSeleccionados.length === 0) {
       return;
     }
 
-    if (archivosSeleccionados.length === 0) {
-      return;
-    }
-
-    const espaciosDisponibles =
-      MAXIMO_IMAGENES - formulario.imagenes.length;
-
+    const espaciosDisponibles = MAXIMO_IMAGENES - formulario.imagenes.length;
     if (archivosSeleccionados.length > espaciosDisponibles) {
       setMensajeImagenes(
         `Puedes agregar como máximo ${MAXIMO_IMAGENES} fotos. Borra una para agregar otra.`,
@@ -423,47 +413,67 @@ function PublicarLibroPag() {
       return;
     }
 
-    const imagenInvalida = archivosSeleccionados.find(
-      (archivo) =>
-        !TIPOS_IMAGEN_PERMITIDOS.includes(archivo.type),
-    );
-
-    if (imagenInvalida) {
-      setMensajeImagenes(
-        "Todas las imágenes deben ser JPG, PNG o WebP.",
-      );
-      return;
-    }
-
-    const imagenMuyGrande = archivosSeleccionados.find(
-      (archivo) => archivo.size > MAXIMO_TAMANO_IMAGEN,
-    );
-
-    if (imagenMuyGrande) {
-      setMensajeImagenes(
-        "Cada imagen debe pesar como máximo 5 MB.",
-      );
-      return;
-    }
-
-    const imagenesActualizadas = [
-      ...formulario.imagenes,
-      ...archivosSeleccionados,
-    ];
-
-    const vistasPreviasNuevas = archivosSeleccionados.map(
-      (archivo) => URL.createObjectURL(archivo),
-    );
-
-    setEsError(false);
+    procesandoImagenesRef.current = true;
+    setConvirtiendoImagenes(true);
     setMensajeImagenes("");
 
-    actualizarCampo("imagenes", imagenesActualizadas);
+    try {
+      const archivosProcesados: File[] = [];
 
-    setVistasPreviasImagenes((vistasAnteriores) => [
-      ...vistasAnteriores,
-      ...vistasPreviasNuevas,
-    ]);
+      for (const archivo of archivosSeleccionados) {
+        const esHeic =
+          /\.(heic|heif)$/i.test(archivo.name) ||
+          ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"].includes(archivo.type.toLowerCase());
+
+        let imagen = archivo;
+        if (esHeic) {
+          // Carga la librería únicamente cuando alguien selecciona HEIC/HEIF.
+          const { default: heic2any } = await import("heic2any");
+          const resultado = await heic2any({
+            blob: archivo,
+            toType: "image/jpeg",
+            quality: 0.85,
+          });
+          const convertido = Array.isArray(resultado) ? resultado[0] : resultado;
+          imagen = new File(
+            [convertido],
+            archivo.name.replace(/\.(heic|heif)$/i, "") + ".jpg",
+            { type: "image/jpeg", lastModified: Date.now() },
+          );
+        }
+
+        if (!TIPOS_IMAGEN_PERMITIDOS.includes(imagen.type)) {
+          throw new Error(`El archivo «${archivo.name}» no es una imagen JPG, PNG o WebP válida.`);
+        }
+        if (imagen.size > MAXIMO_TAMANO_IMAGEN) {
+          throw new Error(`La imagen «${archivo.name}» supera los 5 MB permitidos.`);
+        }
+        archivosProcesados.push(imagen);
+      }
+
+      const vistasPreviasNuevas = archivosProcesados.map((imagen) =>
+        URL.createObjectURL(imagen),
+      );
+      setFormulario((anterior) => ({
+        ...anterior,
+        imagenes: [...anterior.imagenes, ...archivosProcesados],
+      }));
+      setVistasPreviasImagenes((anteriores) => [
+        ...anteriores,
+        ...vistasPreviasNuevas,
+      ]);
+      setEsError(false);
+    } catch (error) {
+      console.error("Error al procesar fotografías:", error);
+      setMensajeImagenes(
+        error instanceof Error
+          ? error.message
+          : "No se pudo convertir la fotografía. Prueba con una imagen JPG.",
+      );
+    } finally {
+      procesandoImagenesRef.current = false;
+      setConvirtiendoImagenes(false);
+    }
   };
 
   const quitarImagen = (indice: number) => {
@@ -492,7 +502,7 @@ function PublicarLibroPag() {
   const manejarClicSelector = (
     evento: MouseEvent<HTMLInputElement>,
   ) => {
-    if (formulario.imagenes.length >= MAXIMO_IMAGENES) {
+    if (convirtiendoImagenes || formulario.imagenes.length >= MAXIMO_IMAGENES) {
       evento.preventDefault();
 
       setMensajeImagenes(
@@ -508,6 +518,12 @@ function PublicarLibroPag() {
 
     setMensaje("");
     setEsError(false);
+
+    if (convirtiendoImagenes) {
+      setEsError(true);
+      setMensaje("Espera a que terminen de procesarse las fotografías.");
+      return;
+    }
 
     const estadoValido = estadosMexico.some(
       (estado) => estado.nombre === formulario.estado,
@@ -1001,16 +1017,18 @@ function PublicarLibroPag() {
                 <input
                   ref={entradaImagenesRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                   multiple
-                  onChange={manejarImagenes}
+                  onChange={(evento) => void manejarImagenes(evento)}
                   onClick={manejarClicSelector}
+                  disabled={convirtiendoImagenes}
                 />
               </span>
 
               <small className="ayuda-fotos">
                 Puedes agregar hasta 6 fotos. Formatos permitidos:
-                JPG, PNG o WebP. Máximo 5 MB por imagen.
+                JPG, PNG, WebP o HEIC/HEIF (conversión automática). Máximo 5 MB por imagen procesada.
+                {convirtiendoImagenes && " Convirtiendo fotografías, espera un momento..."}
               </small>
             </label>
 
@@ -1286,6 +1304,7 @@ function PublicarLibroPag() {
               className="button button-primary auth-submit"
               disabled={
                 estaEnviando ||
+                convirtiendoImagenes ||
                 cargandoEstados ||
                 cargandoCiudades ||
                 cargandoCodigoPostal
