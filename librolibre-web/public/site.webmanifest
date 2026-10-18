@@ -1,0 +1,26 @@
+
+{
+  "name": "LibroLibre",
+  "short_name": "LibroLibre",
+  "description": "Plataforma gratuita para regalar e intercambiar libros usados.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff8e8",
+  "theme_color": "#2563eb",
+  "lang": "es-MX",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
