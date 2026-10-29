@@ -57,7 +57,7 @@ type RespuestaEliminar = {
   mensaje?: string;
 };
 
-const FOTO_POR_DEFECTO = "/avatar-default.png";
+const FOTO_POR_DEFECTO = "/pwa-192.png";
 
 function PerfilPagina() {
   const navegar = useNavigate();

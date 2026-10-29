@@ -52,7 +52,7 @@ type Estadisticas = {
   librosRegalados: number;
 };
 
-const FOTO_POR_DEFECTO = "/avatar-default.png";
+const FOTO_POR_DEFECTO = "/pwa-192.png";
 
 const categorias = [
   "Todos",

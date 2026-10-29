@@ -193,7 +193,7 @@ function DetalleLibroPag() {
     foto: string | null | undefined,
   ) => {
     if (!foto) {
-      return "/avatar-default.png";
+      return "/pwa-192.png";
     }
 
     if (
@@ -490,7 +490,7 @@ function DetalleLibroPag() {
               className="detalle-usuario-foto"
               onError={(evento) => {
                 evento.currentTarget.src =
-                  "/avatar-default.png";
+                  "/pwa-192.png";
               }}
             />
 
